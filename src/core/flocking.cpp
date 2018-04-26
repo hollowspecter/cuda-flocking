@@ -119,6 +119,7 @@ void cleanup()
 	cleanupKernel();
 	std::cout << "\tGLUT: Finished" << std::endl;
 	glutLeaveMainLoop();
+	std::cout << "\tImGui Shutdown" << std::endl;
 	ImGui_ImplGLUT_Shutdown();
 }
 
@@ -198,7 +199,7 @@ void mouse(int button, int state, int x, int y) {
 	setTitle();
 
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ImVec2((float)x, (float)y);
+	io.MousePos = ImVec2((float)x, (float)y+20);
 
 	if (state == GLUT_DOWN && (button == GLUT_LEFT_BUTTON))
 		io.MouseDown[0] = true;
@@ -277,8 +278,8 @@ void imguiWindow()
 	// 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
 	if (show_test_window)
 	{
-		ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
-		ImGui::ShowTestWindow();
+		ImGui::SetNextWindowPos(ImVec2(250, 20), ImGuiSetCond_FirstUseEver);
+		ImGui::ShowDemoWindow();
 	}
 
 
