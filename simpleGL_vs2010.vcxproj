@@ -112,11 +112,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="flocking.cu" />
     <CudaCompile Include="kernel.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="defs.h" />
+    <ClInclude Include="flocking.h" />
     <ClInclude Include="kernel.h" />
   </ItemGroup>
   <ItemGroup>
