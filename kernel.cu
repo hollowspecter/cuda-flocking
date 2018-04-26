@@ -7,6 +7,10 @@ float *d_rot, *d_angVelo, *d_angAccel;
 float *d_wanderAngle, *d_wanderAngularVelo;
 curandState_t *d_states;
 
+////////////////////////////////////////////////////////////////////////////////
+// CUDA KERNEL FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////
+
 __global__ void init_states_kernel(unsigned int seed, curandState_t *states) {
 
 	/* we have to initialize the state */
@@ -58,6 +62,10 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 	/*pos[index].x = curand(&states[index]) % window_width;
 	pos[index].y = curand(&states[index]) % window_height;*/
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// FLOCKING BEHAVIOUR FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////
 
 __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, float2 *accel) {
 	// store the positions in a shared buffer
@@ -131,6 +139,7 @@ __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, 
 	accel[index].x += (desiredVelo.x - veloBuffer[index].x);
 	accel[index].y += (desiredVelo.y - veloBuffer[index].y);
 }
+
 // doesnt work, always aligns on diagonal line
 __device__ void wanderBehavior(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *rot, float *wanderAngle, float *wanderAngularVelo, curandState_t *states) {
 	// wander behaviour
@@ -161,6 +170,7 @@ __device__ void wanderBehavior(unsigned int index, float2 *pos, float2 *accel, f
 	CLAMP(-MAX_WANDER_VELO, wanderAngularVelo[index], MAX_WANDER_VELO);
 	wanderAngle[index] += 0.5f * wanderAngularVelo[index];
 }
+
 // still problem with random numbers
 __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *rot, float *wanderAngle, float *wanderAngularVelo, curandState_t *states) {
 	// wander behaviour from here: https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-wander--gamedev-1624
@@ -186,6 +196,10 @@ __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, 
 	CLAMP(-MAX_WANDER_VELO, wanderAngularVelo[index], MAX_WANDER_VELO);
 	wanderAngle[index] += 0.5f * wanderAngularVelo[index];
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// PHYSICS FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////
 
 __device__ void applyVelocity(unsigned int index, float2 *pos, float2 *velo) {
 	// apply velocity
@@ -230,6 +244,11 @@ __device__ void applyAcceleration(unsigned int index, float2 *velo, float2 *acce
 		velo[index].y *= MAX_VELOCITY;
 	}
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// HELPER FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////
+
 __device__ float2 normalize2(float2 p)
 {
 	float length = sqrt(p.x * p.x + p.y * p.y);
@@ -252,6 +271,11 @@ __device__ float sqrLength2(float2 p) {
 	return p.x * p.x + p.y * p.y;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// HOST FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////
+
+// called once, allocates all the memory on the cuda device
 void init_kernel() {
 	// speicher anfordern für 1024 objekte
 	// position, velocity, acceleration
@@ -306,17 +330,20 @@ void init_kernel() {
 	init_states_kernel << <1, 1024 >> >(time(0), d_states);
 }
 
+// launches the kernel that is doing the simulation step
 void launch_update_kernel() {
 	update_kernel << <1, 1024 >> >(d_pos, d_velo, d_accel, d_rot, d_wanderAngle,
 		d_wanderAngularVelo, d_states);
 }
 
+// gets called to update the vbo
 void launch_vbo_kernel(float2 *pos)
 {
 	//simple_vbo_kernel<<<1,1024>>>(pos, goal, weights);
 	copy_pos_kernel << <1, 1024 >> >(pos, d_pos, d_rot);
 }
 
+// cleans up all the allocated memory on the device
 void cleanupKernel() {
 	cudaFree(d_pos);
 	cudaFree(d_velo);
