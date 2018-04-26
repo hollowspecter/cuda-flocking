@@ -112,18 +112,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="src\core\kernel.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="defs.h" />
-    <ClInclude Include="flocking.h" />
-    <ClInclude Include="kernel.h" />
+    <ClInclude Include="src\core\defs.h" />
+    <ClInclude Include="src\core\flocking.h" />
+    <ClInclude Include="src\core\imgui_impl_glut.h" />
+    <ClInclude Include="src\core\kernel.h" />
+    <ClInclude Include="src\imgui\imconfig.h" />
+    <ClInclude Include="src\imgui\imgui.h" />
+    <ClInclude Include="src\imgui\imgui_internal.h" />
+    <ClInclude Include="src\imgui\stb_rect_pack.h" />
+    <ClInclude Include="src\imgui\stb_textedit.h" />
+    <ClInclude Include="src\imgui\stb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="QuestionsTodo.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="flocking.cpp" />
+    <ClCompile Include="src\core\flocking.cpp" />
+    <ClCompile Include="src\core\imgui_impl_glut.cpp" />
+    <ClCompile Include="src\imgui\imgui.cpp" />
+    <ClCompile Include="src\imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\imgui\imgui_draw.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

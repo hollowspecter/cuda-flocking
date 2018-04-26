@@ -69,14 +69,14 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 
 __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, float2 *accel) {
 	// store the positions in a shared buffer
-	__shared__ float2 posBuffer[1024]; // see cuda1 p.34
-	__shared__ float2 veloBuffer[1024]; // see cuda1 p.34
+	__shared__ float2 posBuffer[1024];
+	__shared__ float2 veloBuffer[1024];
 	posBuffer[index].x = pos[index].x;
 	posBuffer[index].y = pos[index].y;
 	veloBuffer[index].x = velo[index].x;
 	veloBuffer[index].y = velo[index].y;
 
-	__syncthreads();
+	__syncthreads(); // all the threads must be synced here, so the buffers are filled!
 
 	// implement alignment, cohesion and seperation vectors
 	float2 alignment = make_float2(0.f, 0.f);
