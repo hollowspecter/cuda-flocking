@@ -7,55 +7,21 @@
 
 #include "GL\glew.h"
 #include "GL\freeglut.h"
-#include <iostream>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <helper_gl.h>
-#include <Windows.h>
 
 // includes, cuda
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 
-// Utilities and timing functions
+// Utilities
 #include <helper_functions.h>    // includes cuda.h and cuda_runtime_api.h
-#include <timer.h>               // timing functions
+#include <curand_kernel.h>
 
 // CUDA helper functions
 #include <helper_cuda.h>         // helper functions for CUDA error check
 #include <helper_cuda_gl.h>      // helper functions for CUDA/GL interop
 #include "device_launch_parameters.h" // syncThreads
 
-#include <vector_types.h>
-
-// CUDA random numbers on GPU
-#include <curand.h>
-#include <curand_kernel.h>
-
-// DEFINES
-#ifndef M_PI
-# define M_PI 3.14159265358979323846
-#endif
-#define REFRESH_DELAY (10) //ms
-#define SQR_LOOK_DISTANCE 1000 // for flocking behaviour
-#define MAX_VELOCITY 100.0
-#define MAX_ACCELERATION 50.0
-#define NUMBER_OF_BOIDS 1024
-#define DELTA_TIME 0.0166
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
-#define DEG_TO_RAD(a) (a * M_PI / 180.0)
-#define RAD_TO_DEG(a) (a * 180.0 / M_PI) 
-#define BOID_SIZE 10
-#define EPSILON (0.000001)
-#define CLAMP(a,b,c) { b = ((b) < (a))? (a) : (((b) > (c))? (c): (b));}
-
-// wander
-#define CENTER_OFFSET (150)
-#define WANDER_RADIUS (70)
-#define MAX_WANDER_VELO (0.2)
+#include "defs.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////

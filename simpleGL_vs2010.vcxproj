@@ -112,7 +112,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="simpleGL.cu" />
+    <CudaCompile Include="flocking.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="defs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
