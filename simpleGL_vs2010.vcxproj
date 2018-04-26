@@ -113,9 +113,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="flocking.cu" />
+    <CudaCompile Include="kernel.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="defs.h" />
+    <ClInclude Include="kernel.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="QuestionsTodo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="flocking.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

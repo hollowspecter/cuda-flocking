@@ -1,0 +1,9 @@
+Questions:
+* Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
+* GUI?!
+
+Todo
+* Obstacle Avoidance
+* Goal Seeking
+* Predator Fleeing
+* Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
