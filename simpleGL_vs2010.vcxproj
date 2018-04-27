@@ -115,6 +115,7 @@
     <CudaCompile Include="src\core\kernel.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\core\gui.h" />
     <ClInclude Include="src\core\defs.h" />
     <ClInclude Include="src\core\flocking.h" />
     <ClInclude Include="src\core\imgui_impl_glut.h" />
@@ -130,6 +131,7 @@
     <Text Include="QuestionsTodo.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\core\gui.cpp" />
     <ClCompile Include="src\core\flocking.cpp" />
     <ClCompile Include="src\core\imgui_impl_glut.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
