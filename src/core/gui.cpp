@@ -5,6 +5,7 @@
 #include "GL\freeglut.h"
 #include "defs.h"
 
+bool gui_reset_boids = false;
 bool show_test_window = true;
 bool show_another_window = false;
 
@@ -17,6 +18,8 @@ void renderImgui()
 	ImGui_ImplGLUT_NewFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
 
 	{
+		if (ImGui::Button("Reset")) gui_reset_boids ^= 1;
+
 		static float f = 0.0f;
 		ImGui::Text("Hello, world!");
 		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);

@@ -58,7 +58,7 @@ bool initGL(int *argc, char **argv)
 	glewInit();
 	std::cout << "\tOpen GL Version: " << glGetString(GL_VERSION) << std::endl; //4.6
 	
-																				// register callbacks
+	// register callbacks
 	glutDisplayFunc(renderScene);
 	glutKeyboardFunc(keyboardCallback);
 	glutCloseFunc(closeCallback);
@@ -68,7 +68,7 @@ bool initGL(int *argc, char **argv)
 	glutPassiveMotionFunc(mouseMoveCallback);
 	SDK_CHECK_ERROR_GL(); // cuda_helper
 
-						  // more init stuff
+	// more init stuff
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 
 	glViewport(0, 0, window_width, window_height);

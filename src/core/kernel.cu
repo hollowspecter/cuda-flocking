@@ -7,6 +7,11 @@ float *d_rot, *d_angVelo, *d_angAccel;
 float *d_wanderAngle, *d_wanderAngularVelo;
 curandState_t *d_states;
 
+// host variables
+float2 *h_pos, *h_velo, *h_accel;
+float *h_rot;// , *d_angVelo, *d_angAccel;
+float *h_wanderAngle, *h_wanderAngularVelo;
+
 ////////////////////////////////////////////////////////////////////////////////
 // CUDA KERNEL FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
@@ -277,24 +282,13 @@ __device__ float sqrLength2(float2 p) {
 
 // called once, allocates all the memory on the cuda device
 void init_kernel() {
-	// speicher anfordern für 1024 objekte
-	// position, velocity, acceleration
-	// rotation, angular velo, angular accell
-	float2 *h_pos, *h_velo, *h_accel;
-	float *h_rot;// , *d_angVelo, *d_angAccel;
-	float *h_wanderAngle, *h_wanderAngularVelo;
+	// allocate host arrays
 	cudaHostAlloc(&h_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaHostAllocDefault);
 	cudaHostAlloc(&h_velo, sizeof(float2) * NUMBER_OF_BOIDS, cudaHostAllocDefault);
 	cudaHostAlloc(&h_accel, sizeof(float2) * NUMBER_OF_BOIDS, cudaHostAllocDefault);
 	cudaHostAlloc(&h_rot, sizeof(float) * NUMBER_OF_BOIDS, cudaHostAllocDefault);
 	cudaHostAlloc(&h_wanderAngle, sizeof(float) * NUMBER_OF_BOIDS, cudaHostAllocDefault);
 	cudaHostAlloc(&h_wanderAngularVelo, sizeof(float) * NUMBER_OF_BOIDS, cudaHostAllocDefault);
-	checkCudaErrors(cudaMalloc(&d_pos, sizeof(float2) * NUMBER_OF_BOIDS));
-	checkCudaErrors(cudaMalloc(&d_velo, sizeof(float2) * NUMBER_OF_BOIDS));
-	checkCudaErrors(cudaMalloc(&d_accel, sizeof(float2) * NUMBER_OF_BOIDS));
-	checkCudaErrors(cudaMalloc(&d_rot, sizeof(float) * NUMBER_OF_BOIDS));
-	checkCudaErrors(cudaMalloc(&d_wanderAngle, sizeof(float) * NUMBER_OF_BOIDS));
-	checkCudaErrors(cudaMalloc(&d_wanderAngularVelo, sizeof(float) * NUMBER_OF_BOIDS));
 
 	// init host array
 	for (int i = 0; i < NUMBER_OF_BOIDS; ++i) {
@@ -309,6 +303,14 @@ void init_kernel() {
 		h_wanderAngularVelo[i] = 0.1*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f);
 	}
 
+	// allocate device arrays
+	checkCudaErrors(cudaMalloc(&d_pos, sizeof(float2) * NUMBER_OF_BOIDS));
+	checkCudaErrors(cudaMalloc(&d_velo, sizeof(float2) * NUMBER_OF_BOIDS));
+	checkCudaErrors(cudaMalloc(&d_accel, sizeof(float2) * NUMBER_OF_BOIDS));
+	checkCudaErrors(cudaMalloc(&d_rot, sizeof(float) * NUMBER_OF_BOIDS));
+	checkCudaErrors(cudaMalloc(&d_wanderAngle, sizeof(float) * NUMBER_OF_BOIDS));
+	checkCudaErrors(cudaMalloc(&d_wanderAngularVelo, sizeof(float) * NUMBER_OF_BOIDS));
+
 	// copy to device
 	checkCudaErrors(cudaMemcpy(d_pos, h_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_velo, h_velo, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
@@ -316,14 +318,6 @@ void init_kernel() {
 	checkCudaErrors(cudaMemcpy(d_rot, h_rot, sizeof(float) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_wanderAngle, h_wanderAngle, sizeof(float) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_wanderAngularVelo, h_wanderAngularVelo, sizeof(float) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
-
-	// free host
-	cudaFreeHost(h_pos);
-	cudaFreeHost(h_velo);
-	cudaFreeHost(h_accel);
-	cudaFreeHost(h_rot);
-	cudaFreeHost(h_wanderAngle);
-	cudaFreeHost(h_wanderAngularVelo);
 
 	// allocate space for random states
 	checkCudaErrors(cudaMalloc(&d_states, sizeof(curandState_t) * NUMBER_OF_BOIDS));
@@ -345,6 +339,13 @@ void launch_vbo_kernel(float2 *pos)
 
 // cleans up all the allocated memory on the device
 void cleanupKernel() {
+	cudaFreeHost(h_pos);
+	cudaFreeHost(h_velo);
+	cudaFreeHost(h_accel);
+	cudaFreeHost(h_rot);
+	cudaFreeHost(h_wanderAngle);
+	cudaFreeHost(h_wanderAngularVelo);
+
 	cudaFree(d_pos);
 	cudaFree(d_velo);
 	cudaFree(d_accel);

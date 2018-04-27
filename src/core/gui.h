@@ -1,5 +1,17 @@
 #pragma once
 
+//class CExample {
+//private:
+//	bool gui_reset_boids;
+//public:
+//	CExample();
+//	~CExample();
+//	string getName();
+//};
+//#endif
+//
+////--End of Header--
+
 void initIMGUI();
 void renderImgui();
 void cleanupGui();
