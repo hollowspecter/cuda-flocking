@@ -5,15 +5,28 @@
 #include "GL\freeglut.h"
 #include "defs.h"
 
-bool gui_reset_boids = false;
-bool show_test_window = true;
-bool show_another_window = false;
-
 ////////////////////////////////////////////////////////////////////////////////
-// IMGUI WINDOWS
+// CONSTRUCTORS AND DESTRUCTORS
 ////////////////////////////////////////////////////////////////////////////////
 
-void renderImgui()
+// constructor
+Gui::Gui()
+{
+	ImGui::CreateContext();
+	ImGui_ImplGLUT_Init();
+}
+
+// destructor
+Gui::~Gui()
+{
+	ImGui_ImplGLUT_Shutdown();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// WINDOW FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////
+
+void Gui::renderImgui()
 {
 	ImGui_ImplGLUT_NewFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -32,20 +45,10 @@ void renderImgui()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// CALLBACKS AND INITS
+// CALLBACK FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 
-void initIMGUI() {
-	ImGui::CreateContext();
-	ImGui_ImplGLUT_Init();
-}
-
-void cleanupGui() {
-	ImGui_ImplGLUT_Shutdown();
-}
-
-void guiMouse(int button, int state, int x, int y)
-{
+void Gui::guiMouse(int button, int state, int x, int y) {
 	ImGuiIO& io = ImGui::GetIO();
 	guiMousePos(x, y);
 
@@ -59,14 +62,11 @@ void guiMouse(int button, int state, int x, int y)
 	else
 		io.MouseDown[1] = false;
 }
-
-void guiMousePos(int x, int y) {
-	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ImVec2((float)x, (float)y + 16.f);
-}
-
-void guiKeyboard(unsigned char key, int /*x*/, int /*y*/)
-{
+void Gui::guiKeyboard(unsigned char key, int /*x*/, int /*y*/) {
 	ImGuiIO& io = ImGui::GetIO();
 	io.AddInputCharacter(key);
+}
+void Gui::guiMousePos(int x, int y) {
+	ImGuiIO& io = ImGui::GetIO();
+	io.MousePos = ImVec2((float)x, (float)y + 16.f);
 }

@@ -1,22 +1,18 @@
 #pragma once
+#ifndef GUI_H
+#define GUI_H
 
-//class CExample {
-//private:
-//	bool gui_reset_boids;
-//public:
-//	CExample();
-//	~CExample();
-//	string getName();
-//};
-//#endif
-//
-////--End of Header--
-
-void initIMGUI();
-void renderImgui();
-void cleanupGui();
-
-// callback functions
-void guiMouse(int button, int state, int x, int y);
-void guiKeyboard(unsigned char key, int /*x*/, int /*y*/);
-void guiMousePos(int x, int y);
+class Gui {
+private:
+	bool gui_reset_boids;
+	bool show_test_window;
+	bool show_another_window;
+public:
+	Gui();
+	~Gui();
+	void renderImgui();
+	void guiMouse(int button, int state, int x, int y);
+	void guiKeyboard(unsigned char key, int /*x*/, int /*y*/);
+	void guiMousePos(int x, int y);
+};
+#endif //GUI_H

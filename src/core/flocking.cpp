@@ -6,12 +6,16 @@
 // MAIN METHOD
 ////////////////////////////////////////////////////////////////////////////////
 
+Gui *g_pGui = 0;
+
 int main(int argc, char **argv)
 {
 	// initialize Open GL
 	std::cout << "Initializing GL Context" << std::endl;
 	initGL(&argc, argv);
-	initIMGUI();
+
+	// init gui
+	g_pGui = new Gui();
 
 	// set the Cuda Device
 	std::cout << "Setting Cuda Device" << std::endl;
@@ -102,7 +106,7 @@ void renderScene(void)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// gui rendering
-	renderImgui();
+	g_pGui->renderImgui();
 
 	// swap buffers
 	glutSwapBuffers();
@@ -122,7 +126,7 @@ void closeCallback()
 	std::cout << "\tGLUT: Finished" << std::endl;
 	glutLeaveMainLoop();
 	std::cout << "\tImGui Shutdown" << std::endl;
-	
+	delete(g_pGui);
 }
 
 // creates the vertex data and the vertex buffer object on gpu
@@ -200,21 +204,21 @@ void mouseCallback(int button, int state, int x, int y) {
 	goal.y = window_height - y;
 	setTitle();
 
-	guiMouse(button, state, x, y);
+	g_pGui->guiMouse(button, state, x, y);
 	glutPostRedisplay();
 }
 
 // called by mouse motion events
 void mouseMoveCallback(int x, int y)
 {
-	guiMousePos(x, y);
+	g_pGui->guiMousePos(x, y);
 	glutPostRedisplay();
 }
 
 // called by mouse motion events
 void mouseDragCallback(int x, int y)
 {
-	guiMousePos(x, y);
+	g_pGui->guiMousePos(x, y);
 	glutPostRedisplay();
 }
 
@@ -238,6 +242,6 @@ void keyboardCallback(unsigned char key, int /*x*/, int /*y*/)
 		return;
 	}
 	
-	guiKeyboard(key, 0, 0);
+	g_pGui->guiKeyboard(key, 0, 0);
 }
 
