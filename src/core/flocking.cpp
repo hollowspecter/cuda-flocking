@@ -57,13 +57,15 @@ bool initGL(int *argc, char **argv)
 
 	glewInit();
 	std::cout << "\tOpen GL Version: " << glGetString(GL_VERSION) << std::endl; //4.6
-
+	
 																				// register callbacks
 	glutDisplayFunc(renderScene);
-	glutKeyboardFunc(keyboard);
-	glutCloseFunc(cleanup);
-	glutTimerFunc(REFRESH_DELAY, timerEvent, 0);
-	glutMouseFunc(mouse);
+	glutKeyboardFunc(keyboardCallback);
+	glutCloseFunc(closeCallback);
+	glutTimerFunc(REFRESH_DELAY, timerCallback, 0);
+	glutMouseFunc(mouseCallback);
+	glutMotionFunc(mouseDragCallback);
+	glutPassiveMotionFunc(mouseMoveCallback);
 	SDK_CHECK_ERROR_GL(); // cuda_helper
 
 						  // more init stuff
@@ -111,7 +113,7 @@ void renderScene(void)
 }
 
 // Is called On Close
-void cleanup()
+void closeCallback()
 {
 	std::cout << "Cleanup" << std::endl;
 	deleteVBO();
@@ -183,22 +185,37 @@ void runCuda()
 }
 
 // for refreshing the window
-void timerEvent(int value)
+void timerCallback(int value)
 {
 	if (glutGetWindow())
 	{
 		glutPostRedisplay();
-		glutTimerFunc(REFRESH_DELAY, timerEvent, 0);
+		glutTimerFunc(REFRESH_DELAY, timerCallback, 0);
 	}
 }
 
 // called by mouse motion events
-void mouse(int button, int state, int x, int y) {
+void mouseCallback(int button, int state, int x, int y) {
 	goal.x = x;
 	goal.y = window_height - y;
 	setTitle();
 
 	guiMouse(button, state, x, y);
+	glutPostRedisplay();
+}
+
+// called by mouse motion events
+void mouseMoveCallback(int x, int y)
+{
+	guiMousePos(x, y);
+	glutPostRedisplay();
+}
+
+// called by mouse motion events
+void mouseDragCallback(int x, int y)
+{
+	guiMousePos(x, y);
+	glutPostRedisplay();
 }
 
 // sets the title for debug
@@ -209,7 +226,7 @@ void setTitle() {
 }
 
 // keyboard callback
-void keyboard(unsigned char key, int /*x*/, int /*y*/)
+void keyboardCallback(unsigned char key, int /*x*/, int /*y*/)
 {
 	switch (key)
 	{
@@ -223,8 +240,4 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	
 	guiKeyboard(key, 0, 0);
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// IMGUI WINDOWS
-////////////////////////////////////////////////////////////////////////////////
 

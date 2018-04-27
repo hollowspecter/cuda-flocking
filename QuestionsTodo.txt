@@ -1,6 +1,5 @@
 Questions:
 * Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
-* GUI?!
 
 Todo
 * Restart Button
