@@ -1,7 +1,6 @@
 #include "flocking.h"
 #include "gui.h"
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // MAIN METHOD
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,8 +29,8 @@ int main(int argc, char **argv)
 	createVBO();
 
 	// init goal
-	goal.x = window_width - 50.0f;
-	goal.y = window_height - 50.0f;
+	goal.x = WINDOW_WIDTH - 50.0f;
+	goal.y = WINDOW_HEIGHT - 50.0f;
 	setTitle();
 
 	// run the main loop
@@ -54,10 +53,9 @@ bool initGL(int *argc, char **argv)
 {
 	glutInit(argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(window_width, window_height);
 	glutCreateWindow("OpenGL First Window");
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+	glutFullScreen();
 
 	glewInit();
 	std::cout << "\tOpen GL Version: " << glGetString(GL_VERSION) << std::endl; //4.6
@@ -75,10 +73,10 @@ bool initGL(int *argc, char **argv)
 	// more init stuff
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 
-	glViewport(0, 0, window_width, window_height);
+	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, window_width, 0, window_height, -500, 500);
+	glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -500, 500);
 	//gluOrtho2D(0.0f, 0.0f, (double)window_height, (double)window_width);
 	//glMatrixMode(GL_MODELVIEW);
 
@@ -88,6 +86,13 @@ bool initGL(int *argc, char **argv)
 // Is called from the Main Loop / DisplayFunc
 void renderScene(void)
 {
+	// fetch updates from gui
+	if (g_pGui->gui_reset_boids) {
+		copy_host_to_device();
+		g_pGui->gui_reset_boids = false;
+	}
+	update_configs(g_pGui->getConfiguration());
+
 	// run cuda to modify vbo
 	runCuda();
 
@@ -201,7 +206,7 @@ void timerCallback(int value)
 // called by mouse motion events
 void mouseCallback(int button, int state, int x, int y) {
 	goal.x = x;
-	goal.y = window_height - y;
+	goal.y = WINDOW_HEIGHT - y;
 	setTitle();
 
 	g_pGui->guiMouse(button, state, x, y);

@@ -2,8 +2,10 @@ Questions:
 * Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
 
 Todo
-* Restart Button
-* Obstacle Avoidance
+* Obstacle Avoidance, avoid borders
 * Goal Seeking
 * Predator Fleeing
 * Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
+
+nice to have
+* scroll to zoom

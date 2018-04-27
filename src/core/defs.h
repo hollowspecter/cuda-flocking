@@ -10,8 +10,8 @@
 #define MAX_ACCELERATION 50.0
 #define NUMBER_OF_BOIDS 1024
 #define DELTA_TIME 0.0166
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1080
 #define DEG_TO_RAD(a) (a * M_PI / 180.0)
 #define RAD_TO_DEG(a) (a * 180.0 / M_PI) 
 #define BOID_SIZE 10
@@ -22,3 +22,6 @@
 #define CENTER_OFFSET (150)
 #define WANDER_RADIUS (70)
 #define MAX_WANDER_VELO (0.2)
+
+// configuration
+#define NUM_OF_CONFIG_VARS (3)

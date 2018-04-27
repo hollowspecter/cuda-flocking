@@ -9,14 +9,19 @@
 // CONSTRUCTORS AND DESTRUCTORS
 ////////////////////////////////////////////////////////////////////////////////
 
-// constructor
 Gui::Gui()
 {
 	ImGui::CreateContext();
 	ImGui_ImplGLUT_Init();
+
+	show_test_window = false;
+	show_another_window = false;
+	gui_reset_boids = false;
+	weight_alignement = 1.0f;
+	weight_cohesion = 1.0f;
+	weight_seperation = 1.0f;
 }
 
-// destructor
 Gui::~Gui()
 {
 	ImGui_ImplGLUT_Shutdown();
@@ -32,13 +37,9 @@ void Gui::renderImgui()
 
 	{
 		if (ImGui::Button("Reset")) gui_reset_boids ^= 1;
-
-		static float f = 0.0f;
-		ImGui::Text("Hello, world!");
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-		if (ImGui::Button("Test Window")) show_test_window ^= 1;
-		if (ImGui::Button("Another Window")) show_another_window ^= 1;
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::SliderFloat("weight: alignement", &weight_alignement, 0.0f, 1.0f);
+		ImGui::SliderFloat("weight: cohesion", &weight_cohesion, 0.0f, 1.0f);
+		ImGui::SliderFloat("weight: seperation", &weight_seperation, 0.0f, 1.0f);
 	}
 
 	ImGui::Render();
@@ -68,5 +69,14 @@ void Gui::guiKeyboard(unsigned char key, int /*x*/, int /*y*/) {
 }
 void Gui::guiMousePos(int x, int y) {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ImVec2((float)x, (float)y + 16.f);
+	io.MousePos = ImVec2((float)x, (float)y + 227.f);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// GETTER
+////////////////////////////////////////////////////////////////////////////////
+
+float* Gui::getConfiguration() {
+	float result[3] = { weight_alignement , weight_cohesion , weight_seperation };
+	return &result[0];
 }

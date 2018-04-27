@@ -6,11 +6,13 @@ float2 *d_pos, *d_velo, *d_accel;
 float *d_rot, *d_angVelo, *d_angAccel;
 float *d_wanderAngle, *d_wanderAngularVelo;
 curandState_t *d_states;
+float *d_configs;
 
 // host variables
 float2 *h_pos, *h_velo, *h_accel;
 float *h_rot;// , *d_angVelo, *d_angAccel;
 float *h_wanderAngle, *h_wanderAngularVelo;
+float *h_configs;
 
 ////////////////////////////////////////////////////////////////////////////////
 // CUDA KERNEL FUNCTIONS
@@ -50,12 +52,12 @@ __global__ void copy_pos_kernel(float2 *pos, float2 *newpos, float *rot)
 }
 
 __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *rot,
-	float *wanderAngle, float *wanderAngularVelo, curandState_t *states)
+	float *wanderAngle, float *wanderAngularVelo, curandState_t *states, float *configs)
 {
 	unsigned int index = threadIdx.x;
 
 	//wanderBehavior2(index, pos, accel, velo, rot, wanderAngle, wanderAngularVelo, states);
-	flockingBehavior(index, pos, velo, accel);
+	flockingBehavior(index, pos, velo, accel, configs);
 
 	///////////////physics
 	applyAcceleration(index, velo, accel);
@@ -72,7 +74,7 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 // FLOCKING BEHAVIOUR FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 
-__device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, float2 *accel) {
+__device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, float2 *accel, float *configs) {
 	// store the positions in a shared buffer
 	__shared__ float2 posBuffer[1024];
 	__shared__ float2 veloBuffer[1024];
@@ -136,8 +138,8 @@ __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, 
 	}
 
 	float2 desiredVelo;
-	desiredVelo.x = alignment.x + cohesion.x + 1.5f*seperation.x;
-	desiredVelo.y = alignment.y + cohesion.y + 1.5f*seperation.y;
+	desiredVelo.x = configs[0] * alignment.x + configs[1] * cohesion.x + configs[2] * seperation.x;
+	desiredVelo.y = configs[0] * alignment.y + configs[1] * cohesion.y + configs[2] * seperation.y;
 	desiredVelo = normalize2(desiredVelo);
 	desiredVelo.x *= MAX_VELOCITY;
 	desiredVelo.y *= MAX_VELOCITY;
@@ -311,6 +313,23 @@ void init_kernel() {
 	checkCudaErrors(cudaMalloc(&d_wanderAngle, sizeof(float) * NUMBER_OF_BOIDS));
 	checkCudaErrors(cudaMalloc(&d_wanderAngularVelo, sizeof(float) * NUMBER_OF_BOIDS));
 
+	copy_host_to_device();
+
+	// allocate space for random states
+	checkCudaErrors(cudaMalloc(&d_states, sizeof(curandState_t) * NUMBER_OF_BOIDS));
+	init_states_kernel << <1, 1024 >> >(time(0), d_states);
+
+	// allocate and init configuration stuff
+	cudaHostAlloc(&h_configs, sizeof(float) * NUM_OF_CONFIG_VARS, cudaHostAllocDefault);
+	for (int i = 0; i < NUM_OF_CONFIG_VARS; ++i) {
+		h_configs[i] = 1.f;
+	}
+	checkCudaErrors(cudaMalloc(&d_configs, sizeof(float) * NUM_OF_CONFIG_VARS));
+	checkCudaErrors(cudaMemcpy(d_configs, h_configs, sizeof(float) * NUM_OF_CONFIG_VARS, cudaMemcpyHostToDevice));
+}
+
+// used to reset the positions
+void copy_host_to_device() {
 	// copy to device
 	checkCudaErrors(cudaMemcpy(d_pos, h_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_velo, h_velo, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
@@ -318,16 +337,19 @@ void init_kernel() {
 	checkCudaErrors(cudaMemcpy(d_rot, h_rot, sizeof(float) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_wanderAngle, h_wanderAngle, sizeof(float) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_wanderAngularVelo, h_wanderAngularVelo, sizeof(float) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
+}
 
-	// allocate space for random states
-	checkCudaErrors(cudaMalloc(&d_states, sizeof(curandState_t) * NUMBER_OF_BOIDS));
-	init_states_kernel << <1, 1024 >> >(time(0), d_states);
+void update_configs(float *configs) {
+	for (int i = 0; i < NUM_OF_CONFIG_VARS; ++i) {
+		h_configs[i] = configs[i];
+	}
+	checkCudaErrors(cudaMemcpy(d_configs, h_configs, sizeof(float) * NUM_OF_CONFIG_VARS, cudaMemcpyHostToDevice));
 }
 
 // launches the kernel that is doing the simulation step
 void launch_update_kernel() {
 	update_kernel << <1, 1024 >> >(d_pos, d_velo, d_accel, d_rot, d_wanderAngle,
-		d_wanderAngularVelo, d_states);
+		d_wanderAngularVelo, d_states, d_configs);
 }
 
 // gets called to update the vbo
@@ -345,6 +367,7 @@ void cleanupKernel() {
 	cudaFreeHost(h_rot);
 	cudaFreeHost(h_wanderAngle);
 	cudaFreeHost(h_wanderAngularVelo);
+	cudaFreeHost(h_configs);
 
 	cudaFree(d_pos);
 	cudaFree(d_velo);
@@ -353,4 +376,5 @@ void cleanupKernel() {
 	cudaFree(d_wanderAngle);
 	cudaFree(d_wanderAngularVelo);
 	cudaFree(d_states);
+	cudaFree(d_configs);
 }
