@@ -14,6 +14,9 @@ float *h_rot;// , *d_angVelo, *d_angAccel;
 float *h_wanderAngle, *h_wanderAngularVelo;
 float *h_configs;
 
+const unsigned int threadsPerBlock = 512;
+const unsigned int numBlocks = 2;
+
 ////////////////////////////////////////////////////////////////////////////////
 // CUDA KERNEL FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,7 +33,8 @@ __global__ void init_states_kernel(unsigned int seed, curandState_t *states) {
 
 __global__ void copy_pos_kernel(float2 *pos, float2 *newpos, float *rot)
 {
-	unsigned int boidIndex = threadIdx.x;
+	//unsigned int boidIndex = threadIdx.x;
+	unsigned int boidIndex = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int pointIndex = boidIndex * 6;
 	float rot1 = -rot[boidIndex] + 90, rot2 = rot1 - 140, rot3 = rot1 + 140;
 
@@ -54,7 +58,8 @@ __global__ void copy_pos_kernel(float2 *pos, float2 *newpos, float *rot)
 __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *rot,
 	float *wanderAngle, float *wanderAngularVelo, curandState_t *states, float *configs)
 {
-	unsigned int index = threadIdx.x;
+	//unsigned int index = threadIdx.x;
+	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
 
 	//wanderBehavior2(index, pos, accel, velo, rot, wanderAngle, wanderAngularVelo, states);
 	flockingBehavior(index, pos, velo, accel, configs);
@@ -317,7 +322,7 @@ void init_kernel() {
 
 	// allocate space for random states
 	checkCudaErrors(cudaMalloc(&d_states, sizeof(curandState_t) * NUMBER_OF_BOIDS));
-	init_states_kernel << <1, 1024 >> >(time(0), d_states);
+	init_states_kernel << <numBlocks, threadsPerBlock >> >(time(0), d_states);
 
 	// allocate and init configuration stuff
 	cudaHostAlloc(&h_configs, sizeof(float) * NUM_OF_CONFIG_VARS, cudaHostAllocDefault);
@@ -348,7 +353,7 @@ void update_configs(float *configs) {
 
 // launches the kernel that is doing the simulation step
 void launch_update_kernel() {
-	update_kernel << <1, 1024 >> >(d_pos, d_velo, d_accel, d_rot, d_wanderAngle,
+	update_kernel << <numBlocks, threadsPerBlock >> >(d_pos, d_velo, d_accel, d_rot, d_wanderAngle,
 		d_wanderAngularVelo, d_states, d_configs);
 }
 
@@ -356,7 +361,7 @@ void launch_update_kernel() {
 void launch_vbo_kernel(float2 *pos)
 {
 	//simple_vbo_kernel<<<1,1024>>>(pos, goal, weights);
-	copy_pos_kernel << <1, 1024 >> >(pos, d_pos, d_rot);
+	copy_pos_kernel << <numBlocks, threadsPerBlock >> >(pos, d_pos, d_rot);
 }
 
 // cleans up all the allocated memory on the device

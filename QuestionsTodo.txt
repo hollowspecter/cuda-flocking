@@ -2,6 +2,7 @@ Questions:
 * Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
 
 Todo
+* MAKE MORE => fehler
 * Obstacle Avoidance, avoid borders
 * Goal Seeking
 * Predator Fleeing
