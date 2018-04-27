@@ -1,6 +1,8 @@
 # cuda-flocking
 A simple OpenGL application to simulate a flocking species using GPU programming with Nvidia's CUDA using the interopability between CUDA and OpenGL.
 
+[current state gif](https://twitter.com/HollowSpecter/status/989494293009231872)
+
 ### OpenGL and CUDA
 Using the CUDA Interopability, you can use CUDA and OpenGL together. To learn more about the interop, please read this
 https://www.3dgep.com/opengl-interoperability-with-cuda/
