@@ -2,11 +2,11 @@ Questions:
 * Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
 
 Todo
-* MAKE MORE => fehler
+* MAKE MORE schon bei doppelter anzahl => fehler
 * Obstacle Avoidance, avoid borders
 * Goal Seeking
 * Predator Fleeing
-* Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
+* wander behaviour überarbeiten
 
 nice to have
 * scroll to zoom
