@@ -2,6 +2,9 @@ Questions:
 * Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
 
 Todo
+* enum für configs
+* Wander Behaviour Togglebar
+* refactor opengl fenster objektorientiert
 * MAKE MORE schon bei doppelter anzahl => fehler
 * Obstacle Avoidance, avoid borders
 * Goal Seeking

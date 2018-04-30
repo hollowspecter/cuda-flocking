@@ -16,6 +16,13 @@
 #include <helper_cuda_gl.h>      // helper functions for CUDA/GL interop
 #include "device_launch_parameters.h" // syncThreads
 
+enum Configuration {
+	WEIGHT_ALIGNEMENT = 0,
+	WEIGHT_COHESION = 1,
+	WEIGHT_SEPERATION = 2,
+	WEIGHT_WANDER = 3
+};
+
 // methods
 void init_kernel();
 void launch_update_kernel();

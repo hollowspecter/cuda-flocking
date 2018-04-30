@@ -143,8 +143,8 @@ __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, 
 	}
 
 	float2 desiredVelo;
-	desiredVelo.x = configs[0] * alignment.x + configs[1] * cohesion.x + configs[2] * seperation.x;
-	desiredVelo.y = configs[0] * alignment.y + configs[1] * cohesion.y + configs[2] * seperation.y;
+	desiredVelo.x = configs[WEIGHT_ALIGNEMENT] * alignment.x + configs[WEIGHT_COHESION] * cohesion.x + configs[WEIGHT_SEPERATION] * seperation.x;
+	desiredVelo.y = configs[WEIGHT_ALIGNEMENT] * alignment.y + configs[WEIGHT_COHESION] * cohesion.y + configs[WEIGHT_SEPERATION] * seperation.y;
 	desiredVelo = normalize2(desiredVelo);
 	desiredVelo.x *= MAX_VELOCITY;
 	desiredVelo.y *= MAX_VELOCITY;

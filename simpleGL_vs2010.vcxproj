@@ -126,6 +126,7 @@
     <ClInclude Include="src\imgui\stb_rect_pack.h" />
     <ClInclude Include="src\imgui\stb_textedit.h" />
     <ClInclude Include="src\imgui\stb_truetype.h" />
+    <ClInclude Include="src\core\window.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="QuestionsTodo.txt" />
@@ -137,6 +138,7 @@
     <ClCompile Include="src\imgui\imgui.cpp" />
     <ClCompile Include="src\imgui\imgui_demo.cpp" />
     <ClCompile Include="src\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\core\window.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
