@@ -5,6 +5,8 @@ Questions:
 Todo
 * refactor opengl fenster objektorientiert
 * MAKE MORE schon bei doppelter anzahl => fehler
+
+More behaviours
 * Obstacle Avoidance, avoid borders
 * Goal Seeking
 * Predator Fleeing

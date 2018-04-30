@@ -10,6 +10,8 @@ void mouseCallbackRedirect(int button, int state, int x, int y) { Window::pWindo
 void mouseMoveCallbackRedirect(int x, int y) { Window::pWindow->mouseMoveCallback(x,y); }
 void mouseDragCallbackRedirect(int x, int y) { Window::pWindow->mouseDragCallback(x, y); }
 void keyboardCallbackRedirect(unsigned char key, int x, int y) { Window::pWindow->keyboardCallback(key,x,y); }
+void mouseWheelRedirect(int button, int state, int x, int y) { Window::pWindow->mouseWheel(button, state, x, y); }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // CONSTRUCTORS AND DESTRUCTORS
@@ -66,6 +68,7 @@ void Window::initGL(int *argc, char **argv) {
 	glutMouseFunc(mouseCallbackRedirect);
 	glutMotionFunc(mouseDragCallbackRedirect);
 	glutPassiveMotionFunc(mouseMoveCallbackRedirect);
+	glutMouseWheelFunc(mouseWheelRedirect);
 	SDK_CHECK_ERROR_GL(); // cuda_helper
 
 	// more init stuff
@@ -74,7 +77,7 @@ void Window::initGL(int *argc, char **argv) {
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -500, 500);
+	glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,6 +98,10 @@ void Window::renderScene(void)
 
 	// clear buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// redefine scaling matrix
+	glLoadIdentity();
+	glOrtho(0, WINDOW_WIDTH * zoom, 0, WINDOW_HEIGHT * zoom, -1, 1);
 
 	// bind vbo
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -210,4 +217,18 @@ void Window::keyboardCallback(unsigned char key, int /*x*/, int /*y*/) {
 	}
 
 	pGui->guiKeyboard(key, 0, 0);
+}
+
+void Window::mouseWheel(int button, int dir, int x, int y)
+{
+	if (dir > 0)
+	{
+		zoom -= 1.f/(1 << 4);
+	}
+	else if (dir < 0)
+	{
+		zoom += 1.f/(1 << 4);
+	}
+	//pGui->guiMouseWheel(button, dir, x, y);
+	glutPostRedisplay();
 }

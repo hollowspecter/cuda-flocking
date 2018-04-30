@@ -97,6 +97,18 @@ void Gui::guiMousePos(int x, int y) {
 	ImGuiIO& io = ImGui::GetIO();
 	io.MousePos = ImVec2((float)x, (float)y + 227.f);
 }
+void Gui::guiMouseWheel(int button, int dir, int x, int y) {
+	ImGuiIO& io = ImGui::GetIO();
+	io.MousePos = ImVec2((float)x, (float)y);
+	if (dir > 0)
+	{
+		io.MouseWheel = 1.0;
+	}
+	else if (dir < 0)
+	{
+		io.MouseWheel = -1.0;
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // GETTER

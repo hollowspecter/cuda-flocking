@@ -14,6 +14,8 @@ public:
 	void guiMouse(int button, int state, int x, int y);
 	void guiKeyboard(unsigned char key, int /*x*/, int /*y*/);
 	void guiMousePos(int x, int y);
+	void guiMouseWheel(int button, int dir, int x, int y);
+
 	float* getConfiguration();
 };
 #endif //GUI_H
