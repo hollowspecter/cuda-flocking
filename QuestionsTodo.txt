@@ -1,18 +1,14 @@
 Questions:
 * Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
+* MAKE MORE schon bei doppelter anzahl => fehler
 
 Todo
-MITTENDRIN: use max accell und max velo von configs in kernel.cu
-in methoden applyvelo and applyaccel
-
-* einstellen von speed und acceleration
-* Wander Behaviour Togglebar
 * refactor opengl fenster objektorientiert
 * MAKE MORE schon bei doppelter anzahl => fehler
 * Obstacle Avoidance, avoid borders
 * Goal Seeking
 * Predator Fleeing
-* wander behaviour überarbeiten
+* Wander behaviour überarbeiten wenn curand funktioniert
 
 nice to have
 * scroll to zoom
