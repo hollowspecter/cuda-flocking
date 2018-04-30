@@ -31,28 +31,29 @@ __global__ void init_states_kernel(unsigned int seed, curandState_t *states) {
 		&states[threadIdx.x]);
 }
 
-__global__ void copy_pos_kernel(float2 *pos, float2 *newpos, float *rot)
+__global__ void copy_pos_kernel(float2 *pos, float2 *newpos, float *rot, float *configs)
 {
 	//unsigned int boidIndex = threadIdx.x;
 	unsigned int boidIndex = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int pointIndex = boidIndex * 6;
 	float rot1 = -rot[boidIndex] + 90, rot2 = rot1 - 140, rot3 = rot1 + 140;
+	float size = configs[BOID_SIZE];
 
 	// first triangle
 	pos[pointIndex].x = newpos[boidIndex].x;
 	pos[pointIndex].y = newpos[boidIndex].y;
-	pos[pointIndex + 1].x = newpos[boidIndex].x + cosf(DEG_TO_RAD(rot1)) * BOID_SIZE;
-	pos[pointIndex + 1].y = newpos[boidIndex].y + sinf(DEG_TO_RAD(rot1)) * BOID_SIZE;
-	pos[pointIndex + 2].x = newpos[boidIndex].x + cosf(DEG_TO_RAD(rot2)) * BOID_SIZE;
-	pos[pointIndex + 2].y = newpos[boidIndex].y + sinf(DEG_TO_RAD(rot2)) * BOID_SIZE;
+	pos[pointIndex + 1].x = newpos[boidIndex].x + cosf(DEG_TO_RAD(rot1)) * size;
+	pos[pointIndex + 1].y = newpos[boidIndex].y + sinf(DEG_TO_RAD(rot1)) * size;
+	pos[pointIndex + 2].x = newpos[boidIndex].x + cosf(DEG_TO_RAD(rot2)) * size;
+	pos[pointIndex + 2].y = newpos[boidIndex].y + sinf(DEG_TO_RAD(rot2)) * size;
 
 	// second triangle						  					 
 	pos[pointIndex + 3].x = newpos[boidIndex].x;
 	pos[pointIndex + 3].y = newpos[boidIndex].y;
-	pos[pointIndex + 4].x = newpos[boidIndex].x + cosf(DEG_TO_RAD(rot1)) * BOID_SIZE;
-	pos[pointIndex + 4].y = newpos[boidIndex].y + sinf(DEG_TO_RAD(rot1)) * BOID_SIZE;
-	pos[pointIndex + 5].x = newpos[boidIndex].x + cosf(DEG_TO_RAD(rot3)) * BOID_SIZE;
-	pos[pointIndex + 5].y = newpos[boidIndex].y + sinf(DEG_TO_RAD(rot3)) * BOID_SIZE;
+	pos[pointIndex + 4].x = newpos[boidIndex].x + cosf(DEG_TO_RAD(rot1)) * size;
+	pos[pointIndex + 4].y = newpos[boidIndex].y + sinf(DEG_TO_RAD(rot1)) * size;
+	pos[pointIndex + 5].x = newpos[boidIndex].x + cosf(DEG_TO_RAD(rot3)) * size;
+	pos[pointIndex + 5].y = newpos[boidIndex].y + sinf(DEG_TO_RAD(rot3)) * size;
 }
 
 __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *rot,
@@ -303,15 +304,15 @@ void init_kernel() {
 
 	// init host array
 	for (int i = 0; i < NUMBER_OF_BOIDS; ++i) {
-		h_pos[i].x = rand() % WINDOW_WIDTH;
-		h_pos[i].y = rand() % WINDOW_HEIGHT;
+		h_pos[i].x = (float)(rand() % WINDOW_WIDTH);
+		h_pos[i].y = (float)(rand() % WINDOW_HEIGHT);
 		h_velo[i].x = 0.f;
 		h_velo[i].y = 0.f;
-		h_accel[i].x = (2.0*float(rand()) / float(RAND_MAX) - 1.0f) * MAX_ACCELERATION;
-		h_accel[i].y = (2.0*float(rand()) / float(RAND_MAX) - 1.0f) * MAX_ACCELERATION;
-		h_rot[i] = rand() % 360;
-		h_wanderAngle[i] = (rand() % 100) / 100.f * 2 * M_PI;
-		h_wanderAngularVelo[i] = 0.1*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f);
+		h_accel[i].x = (2.0*float(rand()) / float(RAND_MAX) - 1.0f) * (float)MAX_ACCELERATION;
+		h_accel[i].y = (2.0*float(rand()) / float(RAND_MAX) - 1.0f) * (float)MAX_ACCELERATION;
+		h_rot[i] = (float)(rand() % 360);
+		h_wanderAngle[i] = (rand() % 100) / 100.f * 2.f * (float)M_PI;
+		h_wanderAngularVelo[i] = 0.1f*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f);
 	}
 
 	// allocate device arrays
@@ -365,7 +366,7 @@ void launch_update_kernel() {
 void launch_vbo_kernel(float2 *pos)
 {
 	//simple_vbo_kernel<<<1,1024>>>(pos, goal, weights);
-	copy_pos_kernel << <numBlocks, threadsPerBlock >> >(pos, d_pos, d_rot);
+	copy_pos_kernel << <numBlocks, threadsPerBlock >> >(pos, d_pos, d_rot, d_configs);
 }
 
 // cleans up all the allocated memory on the device

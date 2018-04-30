@@ -14,7 +14,6 @@
 #define WINDOW_HEIGHT 1080
 #define DEG_TO_RAD(a) (a * M_PI / 180.0)
 #define RAD_TO_DEG(a) (a * 180.0 / M_PI) 
-#define BOID_SIZE 10
 #define EPSILON (0.000001)
 #define CLAMP(a,b,c) { b = ((b) < (a))? (a) : (((b) > (c))? (c): (b));}
 
@@ -24,12 +23,13 @@
 #define MAX_WANDER_VELO (0.2)
 
 // configuration
-#define NUM_OF_CONFIG_VARS (6)
+#define NUM_OF_CONFIG_VARS (7)
 enum Configuration {
 	WEIGHT_ALIGNEMENT = 0,
 	WEIGHT_COHESION = 1,
 	WEIGHT_SEPERATION = 2,
 	WEIGHT_WANDER = 3,
 	BOID_MAX_VELOCITY = 4,
-	BOID_MAX_ACCEL = 5
+	BOID_MAX_ACCEL = 5,
+	BOID_SIZE = 6
 };

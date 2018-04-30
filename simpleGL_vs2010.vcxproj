@@ -132,7 +132,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\gui.cpp" />
-    <ClCompile Include="src\core\flocking.cpp" />
+    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\core\imgui_impl_glut.cpp" />
     <ClCompile Include="src\imgui\imgui.cpp" />
     <ClCompile Include="src\imgui\imgui_demo.cpp" />

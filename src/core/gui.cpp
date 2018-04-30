@@ -23,6 +23,7 @@ Gui::Gui()
 	}
 	configs[BOID_MAX_VELOCITY] = MAX_VELOCITY;
 	configs[BOID_MAX_ACCEL] = MAX_ACCELERATION;
+	configs[BOID_SIZE] = 10.f;
 }
 
 Gui::~Gui()
@@ -45,6 +46,7 @@ void Gui::renderImgui()
 		
 	if (ImGui::CollapsingHeader("Boid Attributes"))
 	{
+		ImGui::SliderFloat("size", &configs[BOID_SIZE], 1.0f, 50.f);
 		ImGui::SliderFloat("max velocity", &configs[BOID_MAX_VELOCITY], 0.0f, (float)MAX_VELOCITY * 2.f);
 		ImGui::SliderFloat("max acceleration", &configs[BOID_MAX_ACCEL], 0.0f, (float)MAX_ACCELERATION * 2.f);
 	}
