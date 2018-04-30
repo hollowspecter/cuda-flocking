@@ -61,13 +61,14 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 	//unsigned int index = threadIdx.x;
 	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
 
-	//wanderBehavior2(index, pos, accel, velo, rot, wanderAngle, wanderAngularVelo, states);
+	///////////////behaviours
+	wanderBehavior2(index, pos, accel, velo, rot, wanderAngle, wanderAngularVelo, states, configs);
 	flockingBehavior(index, pos, velo, accel, configs);
 
 	///////////////physics
-	applyAcceleration(index, velo, accel);
+	applyAcceleration(index, velo, accel, configs);
 	lookWhereYourGoing(index, pos, velo, rot);
-	applyVelocity(index, pos, velo);
+	applyVelocity(index, pos, velo, configs);
 
 	// curand test http://cs.umw.edu/~finlayson/class/fall16/cpsc425/notes/cuda-random.html
 	//curand_init(673,0,0,&state);
@@ -184,7 +185,7 @@ __device__ void wanderBehavior(unsigned int index, float2 *pos, float2 *accel, f
 }
 
 // still problem with random numbers
-__device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *rot, float *wanderAngle, float *wanderAngularVelo, curandState_t *states) {
+__device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *rot, float *wanderAngle, float *wanderAngularVelo, curandState_t *states, float *configs) {
 	// wander behaviour from here: https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-wander--gamedev-1624
 	float2 circleCenter = make_float2(0.0f, 0.0f),
 		displacement = make_float2(0.0f, -1.f);
@@ -199,8 +200,8 @@ __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, 
 	displacement.x = cosf(wanderAngle[index]) * WANDER_RADIUS;
 	displacement.y = sinf(wanderAngle[index]) * WANDER_RADIUS;
 
-	accel[index].x = circleCenter.x + displacement.x;
-	accel[index].y = circleCenter.y + displacement.y;
+	accel[index].x = (circleCenter.x + displacement.x) * configs[WEIGHT_WANDER];
+	accel[index].y = (circleCenter.y + displacement.y) * configs[WEIGHT_WANDER];
 
 	// move the circle point randomly on the circular path by changing the wanderAngle
 	float wanderAngularAccel = (0.2*double(curand(&states[index])) / double(RAND_MAX) - 0.1);
@@ -213,7 +214,7 @@ __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, 
 // PHYSICS FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 
-__device__ void applyVelocity(unsigned int index, float2 *pos, float2 *velo) {
+__device__ void applyVelocity(unsigned int index, float2 *pos, float2 *velo, float *configs) {
 	// apply velocity
 	pos[index].x += DELTA_TIME * velo[index].x;
 	pos[index].y += DELTA_TIME * velo[index].y;
@@ -237,12 +238,15 @@ __device__ void lookWhereYourGoing(unsigned int index, float2 *pos, float2 *velo
 		rot[index] = RAD_TO_DEG(atan2(velo[index].x, velo[index].y));
 	}
 }
-__device__ void applyAcceleration(unsigned int index, float2 *velo, float2 *accel) {
+__device__ void applyAcceleration(unsigned int index, float2 *velo, float2 *accel, float *configs) {
+	const float maxaccel = configs[BOID_MAX_ACCEL];
+	const float maxvelo = configs[BOID_MAX_VELOCITY];
+
 	// cap acceleration
-	if (length2(accel[index]) > MAX_ACCELERATION) {
+	if (length2(accel[index]) > maxaccel) {
 		velo[index] = normalize2(velo[index]);
-		velo[index].x *= MAX_ACCELERATION;
-		velo[index].y *= MAX_ACCELERATION;
+		velo[index].x *= maxaccel;
+		velo[index].y *= maxaccel;
 	}
 
 	// apply acceleration
@@ -250,10 +254,10 @@ __device__ void applyAcceleration(unsigned int index, float2 *velo, float2 *acce
 	velo[index].y += DELTA_TIME * accel[index].y;
 
 	// cap velocity
-	if (length2(velo[index]) > MAX_VELOCITY) {
+	if (length2(velo[index]) > maxvelo) {
 		velo[index] = normalize2(velo[index]);
-		velo[index].x *= MAX_VELOCITY;
-		velo[index].y *= MAX_VELOCITY;
+		velo[index].x *= maxvelo;
+		velo[index].y *= maxvelo;
 	}
 }
 

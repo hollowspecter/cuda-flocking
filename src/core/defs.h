@@ -24,4 +24,12 @@
 #define MAX_WANDER_VELO (0.2)
 
 // configuration
-#define NUM_OF_CONFIG_VARS (3)
+#define NUM_OF_CONFIG_VARS (6)
+enum Configuration {
+	WEIGHT_ALIGNEMENT = 0,
+	WEIGHT_COHESION = 1,
+	WEIGHT_SEPERATION = 2,
+	WEIGHT_WANDER = 3,
+	BOID_MAX_VELOCITY = 4,
+	BOID_MAX_ACCEL = 5
+};

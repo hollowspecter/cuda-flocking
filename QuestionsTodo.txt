@@ -2,7 +2,10 @@ Questions:
 * Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
 
 Todo
-* enum für configs
+MITTENDRIN: use max accell und max velo von configs in kernel.cu
+in methoden applyvelo and applyaccel
+
+* einstellen von speed und acceleration
 * Wander Behaviour Togglebar
 * refactor opengl fenster objektorientiert
 * MAKE MORE schon bei doppelter anzahl => fehler

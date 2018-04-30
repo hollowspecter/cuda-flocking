@@ -3,9 +3,8 @@
 
 class Gui {
 private:
-	bool show_test_window;
-	bool show_another_window;
-	float weight_alignement, weight_cohesion, weight_seperation;
+	bool show_debug_window;
+	float *configs;
 public:
 	bool gui_reset_boids;
 

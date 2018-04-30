@@ -14,16 +14,20 @@ Gui::Gui()
 	ImGui::CreateContext();
 	ImGui_ImplGLUT_Init();
 
-	show_test_window = false;
-	show_another_window = false;
+	show_debug_window = false;
 	gui_reset_boids = false;
-	weight_alignement = 1.0f;
-	weight_cohesion = 1.0f;
-	weight_seperation = 1.0f;
+
+	configs = new float[NUM_OF_CONFIG_VARS];
+	for (int i = 0; i < NUM_OF_CONFIG_VARS; ++i) {
+		configs[i] = 1.0f;
+	}
+	configs[BOID_MAX_VELOCITY] = MAX_VELOCITY;
+	configs[BOID_MAX_ACCEL] = MAX_ACCELERATION;
 }
 
 Gui::~Gui()
 {
+	delete[]configs;
 	ImGui_ImplGLUT_Shutdown();
 }
 
@@ -35,12 +39,32 @@ void Gui::renderImgui()
 {
 	ImGui_ImplGLUT_NewFrame(WINDOW_WIDTH, WINDOW_HEIGHT);
 
+	ImGui::Begin("ImGui Demo", &show_debug_window);
+
+	if (ImGui::Button("Reset Boids")) gui_reset_boids ^= 1;
+		
+	if (ImGui::CollapsingHeader("Boid Attributes"))
 	{
-		if (ImGui::Button("Reset")) gui_reset_boids ^= 1;
-		ImGui::SliderFloat("weight: alignement", &weight_alignement, 0.0f, 1.0f);
-		ImGui::SliderFloat("weight: cohesion", &weight_cohesion, 0.0f, 1.0f);
-		ImGui::SliderFloat("weight: seperation", &weight_seperation, 0.0f, 1.0f);
+		ImGui::SliderFloat("max velocity", &configs[BOID_MAX_VELOCITY], 0.0f, (float)MAX_VELOCITY * 2.f);
+		ImGui::SliderFloat("max acceleration", &configs[BOID_MAX_ACCEL], 0.0f, (float)MAX_ACCELERATION * 2.f);
 	}
+
+	if (ImGui::CollapsingHeader("Flocking Behaviour"))
+	{
+		ImGui::SliderFloat("weight: alignement", &configs[WEIGHT_ALIGNEMENT], 0.0f, 1.0f);
+		ImGui::SliderFloat("weight: cohesion", &configs[WEIGHT_COHESION], 0.0f, 1.0f);
+		ImGui::SliderFloat("weight: seperation", &configs[WEIGHT_SEPERATION], 0.0f, 1.0f);
+	}
+
+	if (ImGui::CollapsingHeader("Wander Behaviour"))
+	{
+		ImGui::SliderFloat("weight: wander", &configs[WEIGHT_WANDER], 0.0f, 1.0f);
+	}
+
+	ImGui::End();
+
+	//static bool b = true;
+	//ImGui::ShowDemoWindow(&b);
 
 	ImGui::Render();
 }
@@ -77,6 +101,10 @@ void Gui::guiMousePos(int x, int y) {
 ////////////////////////////////////////////////////////////////////////////////
 
 float* Gui::getConfiguration() {
-	float result[3] = { weight_alignement , weight_cohesion , weight_seperation };
+
+	float result[NUM_OF_CONFIG_VARS];
+	for (int i = 0; i < NUM_OF_CONFIG_VARS; ++i) {
+		result[i] = configs[i];
+	}
 	return &result[0];
 }
