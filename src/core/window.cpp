@@ -72,8 +72,6 @@ void Window::initGL(int *argc, char **argv) {
 	SDK_CHECK_ERROR_GL(); // cuda_helper
 
 	// more init stuff
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-
 	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -97,6 +95,8 @@ void Window::renderScene(void)
 	runCuda();
 
 	// clear buffer
+	float* color = pGui->getBackgroundColor();
+	glClearColor(color[0], color[1], color[2], 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// redefine scaling matrix
@@ -109,7 +109,8 @@ void Window::renderScene(void)
 
 	// draw
 	glEnableClientState(GL_VERTEX_ARRAY); // enables vertex array
-	glColor3f(1.0, 1.0, 1.0);
+	color = pGui->getBoidColor();
+	glColor3f(color[0], color[1], color[2]);
 	glDrawArrays(GL_TRIANGLES, 0, 3 * NUMBER_OF_BOIDS);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

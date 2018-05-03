@@ -6,7 +6,7 @@
 #include "defs.h"
 
 ////////////////////////////////////////////////////////////////////////////////
-// CONSTRUCTORS AND DESTRUCTORS
+// CONSTRUCTORS AND DESTRUCTORS, INIT FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 
 Gui::Gui()
@@ -17,19 +17,34 @@ Gui::Gui()
 	show_debug_window = false;
 	gui_reset_boids = false;
 
-	configs = new float[NUM_OF_CONFIG_VARS];
-	for (int i = 0; i < NUM_OF_CONFIG_VARS; ++i) {
-		configs[i] = 1.0f;
-	}
-	configs[BOID_MAX_VELOCITY] = MAX_VELOCITY;
-	configs[BOID_MAX_ACCEL] = MAX_ACCELERATION;
-	configs[BOID_SIZE] = 10.f;
+	fillConfigs();
 }
 
 Gui::~Gui()
 {
 	delete[]configs;
 	ImGui_ImplGLUT_Shutdown();
+}
+
+void Gui::fillConfigs() {
+	// init configs
+	configs = new float[NUM_OF_CONFIG_VARS];
+	for (int i = 0; i < NUM_OF_CONFIG_VARS; ++i) {
+		configs[i] = 1.0f;
+	}
+	configs[WEIGHT_ALIGNEMENT] = 0.7f;
+	configs[WEIGHT_COHESION] = 0.89f;
+	configs[BOID_MAX_VELOCITY] = MAX_VELOCITY;
+	configs[BOID_MAX_ACCEL] = MAX_ACCELERATION;
+	configs[BOID_SIZE] = 10.f;
+
+	// init colors
+	color_bg[0] = 24.f / 255.f;
+	color_bg[1] = 26.f / 255.f;
+	color_bg[2] = 33.f/255.f;
+	color_boid[0] = 180.f / 255.f;
+	color_boid[1] = 128.f / 255.f;
+	color_boid[2] = 213.f / 255.f;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -44,9 +59,14 @@ void Gui::renderImgui()
 
 	if (ImGui::Button("Reset Boids")) gui_reset_boids ^= 1;
 		
+	if (ImGui::CollapsingHeader("Environment Attributes")) {
+		ImGui::ColorEdit3("background color", color_bg);
+	}
+	
 	if (ImGui::CollapsingHeader("Boid Attributes"))
 	{
 		ImGui::SliderFloat("size", &configs[BOID_SIZE], 1.0f, 50.f);
+		ImGui::ColorEdit3("background boid", color_boid);
 		ImGui::SliderFloat("max velocity", &configs[BOID_MAX_VELOCITY], 0.0f, (float)MAX_VELOCITY * 2.f);
 		ImGui::SliderFloat("max acceleration", &configs[BOID_MAX_ACCEL], 0.0f, (float)MAX_ACCELERATION * 2.f);
 	}
@@ -121,4 +141,16 @@ float* Gui::getConfiguration() {
 		result[i] = configs[i];
 	}
 	return &result[0];
+}
+
+float* Gui::getBackgroundColor() {
+	float result[3];
+	memcpy(result, color_bg, sizeof(color_bg));
+	return result;
+}
+
+float* Gui::getBoidColor() {
+	float result[3];
+	memcpy(result, color_boid, sizeof(color_boid));
+	return result;
 }
