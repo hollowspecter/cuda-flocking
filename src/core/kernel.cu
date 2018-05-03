@@ -15,7 +15,7 @@ float *h_wanderAngle, *h_wanderAngularVelo;
 float *h_configs;
 
 const unsigned int threadsPerBlock = 512;
-const unsigned int numBlocks = 2;
+const unsigned int numBlocks = 8;
 
 ////////////////////////////////////////////////////////////////////////////////
 // CUDA KERNEL FUNCTIONS
@@ -65,16 +65,10 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 	///////////////behaviours
 	wanderBehavior2(index, pos, accel, velo, rot, wanderAngle, wanderAngularVelo, states, configs);
 	flockingBehavior(index, pos, velo, accel, configs);
-
 	///////////////physics
 	applyAcceleration(index, velo, accel, configs);
 	lookWhereYourGoing(index, pos, velo, rot);
 	applyVelocity(index, pos, velo, configs);
-
-	// curand test http://cs.umw.edu/~finlayson/class/fall16/cpsc425/notes/cuda-random.html
-	//curand_init(673,0,0,&state);
-	/*pos[index].x = curand(&states[index]) % window_width;
-	pos[index].y = curand(&states[index]) % window_height;*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,14 +77,14 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 
 __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, float2 *accel, float *configs) {
 	// store the positions in a shared buffer
-	__shared__ float2 posBuffer[1024];
-	__shared__ float2 veloBuffer[1024];
+	/*__shared__ float2 posBuffer[NUMBER_OF_BOIDS];
+	__shared__ float2 veloBuffer[NUMBER_OF_BOIDS];
 	posBuffer[index].x = pos[index].x;
 	posBuffer[index].y = pos[index].y;
 	veloBuffer[index].x = velo[index].x;
-	veloBuffer[index].y = velo[index].y;
+	veloBuffer[index].y = velo[index].y;*/
 
-	__syncthreads(); // all the threads must be synced here, so the buffers are filled!
+	//__syncthreads(); // all the threads must be synced here, so the buffers are filled!
 
 	// implement alignment, cohesion and seperation vectors
 	float2 alignment = make_float2(0.f, 0.f);
@@ -98,24 +92,24 @@ __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, 
 	float2 seperation = make_float2(0.f, 0.f);
 
 	int numNeighbors = 0;
-	for (int i = 0; i < 1024; ++i) {
+	for (int i = 0; i < NUMBER_OF_BOIDS; ++i) {
 		// skip yourself
 		if (i == index)
 			continue;
 
 		// calculate squareDistance
-		float dx = posBuffer[index].x - posBuffer[i].x;
-		float dy = posBuffer[index].y - posBuffer[i].y;
+		float dx = pos[index].x - pos[i].x;
+		float dy = pos[index].y - pos[i].y;
 		float sqrDistance = dx * dx + dy * dy;
 
 		// for every close neighbor
 		if (sqrDistance < SQR_LOOK_DISTANCE) {
 			numNeighbors++;
 
-			alignment.x += veloBuffer[i].x;
-			alignment.y += veloBuffer[i].y;
-			cohesion.x += posBuffer[i].x;
-			cohesion.y += posBuffer[i].y;
+			alignment.x += velo[i].x;
+			alignment.y += velo[i].y;
+			cohesion.x += pos[i].x;
+			cohesion.y += pos[i].y;
 			seperation.x += dx;
 			seperation.y += dy;
 		}
@@ -135,7 +129,7 @@ __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, 
 		alignment.y /= numNeighbors;*/
 		cohesion.x /= numNeighbors;
 		cohesion.y /= numNeighbors;
-		cohesion = make_float2(cohesion.x - posBuffer[index].x, cohesion.y - posBuffer[index].y);
+		cohesion = make_float2(cohesion.x - pos[index].x, cohesion.y - pos[index].y);
 		/*seperation.x /= numNeighbors;
 		seperation.y /= numNeighbors;*/
 
@@ -150,8 +144,8 @@ __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, 
 	desiredVelo = normalize2(desiredVelo);
 	desiredVelo.x *= MAX_VELOCITY;
 	desiredVelo.y *= MAX_VELOCITY;
-	accel[index].x += (desiredVelo.x - veloBuffer[index].x);
-	accel[index].y += (desiredVelo.y - veloBuffer[index].y);
+	accel[index].x += (desiredVelo.x - velo[index].x);
+	accel[index].y += (desiredVelo.y - velo[index].y);
 }
 
 // doesnt work, always aligns on diagonal line
@@ -185,7 +179,6 @@ __device__ void wanderBehavior(unsigned int index, float2 *pos, float2 *accel, f
 	wanderAngle[index] += 0.5f * wanderAngularVelo[index];
 }
 
-// still problem with random numbers
 __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *rot, float *wanderAngle, float *wanderAngularVelo, curandState_t *states, float *configs) {
 	// wander behaviour from here: https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-wander--gamedev-1624
 	float2 circleCenter = make_float2(0.0f, 0.0f),

@@ -8,7 +8,7 @@
 #define SQR_LOOK_DISTANCE 1000 // for flocking behaviour
 #define MAX_VELOCITY 100.0
 #define MAX_ACCELERATION 50.0
-#define NUMBER_OF_BOIDS 1024
+#define NUMBER_OF_BOIDS 4096
 #define DELTA_TIME 0.0166
 #define WINDOW_WIDTH 1920
 #define WINDOW_HEIGHT 1080
