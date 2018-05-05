@@ -62,21 +62,24 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 	//unsigned int index = threadIdx.x;
 	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
 
-	///////////////behaviours
-	wanderBehavior2(index, pos, accel, velo, rot, wanderAngle, wanderAngularVelo, states, configs);
-	flockingBehavior(index, pos, velo, accel, configs);
-	///////////////physics
+	///////////////behaviour pass
+	if (configs[ENABLE_WANDER] > 0.f)
+		wanderBehavior2(index, pos, accel, velo, rot, wanderAngle, wanderAngularVelo, states, configs);
+	if (configs[ENABLE_FLOCKING] > 0.f)
+		flockingBehavior(index, pos, velo, accel, configs);
+	///////////////simulation pass
 	applyAcceleration(index, velo, accel, configs);
 	lookWhereYourGoing(index, pos, velo, rot);
 	applyVelocity(index, pos, velo, configs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// FLOCKING BEHAVIOUR FUNCTIONS
+// BEHAVIOUR FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 
 __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, float2 *accel, float *configs) {
 	// store the positions in a shared buffer
+	// does not work with several blocks bc shared buffer only works in one block!
 	/*__shared__ float2 posBuffer[NUMBER_OF_BOIDS];
 	__shared__ float2 veloBuffer[NUMBER_OF_BOIDS];
 	posBuffer[index].x = pos[index].x;
@@ -91,7 +94,7 @@ __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, 
 	float2 cohesion = make_float2(0.f, 0.f);
 	float2 seperation = make_float2(0.f, 0.f);
 
-	int numNeighbors = 0;
+	int numNeighborsAlignement = 0, numNeighborsCohesion = 0, numNeighborsSeperation = 0;
 	for (int i = 0; i < NUMBER_OF_BOIDS; ++i) {
 		// skip yourself
 		if (i == index)
@@ -102,41 +105,51 @@ __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, 
 		float dy = pos[index].y - pos[i].y;
 		float sqrDistance = dx * dx + dy * dy;
 
-		// for every close neighbor
-		if (sqrDistance < SQR_LOOK_DISTANCE) {
-			numNeighbors++;
-
+		// for every close neighbor, alignement
+		float sqrThreshold = configs[DISTANCE_ALIGNEMENT];
+		sqrThreshold *= sqrThreshold;
+		if (sqrDistance < sqrThreshold) {
+			numNeighborsAlignement++;
 			alignment.x += velo[i].x;
 			alignment.y += velo[i].y;
+		}
+		sqrThreshold = configs[DISTANCE_COHESION];
+		sqrThreshold *= sqrThreshold;
+		if (sqrDistance < sqrThreshold) {
+			numNeighborsCohesion++;
 			cohesion.x += pos[i].x;
 			cohesion.y += pos[i].y;
+		}
+		sqrThreshold = configs[DISTANCE_SEPERATION];
+		sqrThreshold *= sqrThreshold;
+		if (sqrDistance < sqrThreshold) {
+			numNeighborsSeperation++;
 			seperation.x += dx;
 			seperation.y += dy;
 		}
 	}//endfor
 
 	 // no neighbors found?
-	if (numNeighbors == 0) {
+	if (numNeighborsAlignement == 0) {
 		alignment.x = 0.f;
 		alignment.y = 0.f;
+	}
+	if (numNeighborsCohesion == 0) {
 		cohesion.x = 0.f;
 		cohesion.y = 0.f;
+	}
+	else {
+		cohesion.x /= numNeighborsCohesion;
+		cohesion.y /= numNeighborsCohesion;
+		cohesion = make_float2(cohesion.x - pos[index].x, cohesion.y - pos[index].y);
+	}
+	if (numNeighborsSeperation == 0) {
 		seperation.x = 0.f;
 		seperation.y = 0.f;
 	}
-	else {
-		/*alignment.x /= numNeighbors;
-		alignment.y /= numNeighbors;*/
-		cohesion.x /= numNeighbors;
-		cohesion.y /= numNeighbors;
-		cohesion = make_float2(cohesion.x - pos[index].x, cohesion.y - pos[index].y);
-		/*seperation.x /= numNeighbors;
-		seperation.y /= numNeighbors;*/
-
-		alignment = normalize2(alignment);
-		cohesion = normalize2(cohesion);
-		seperation = normalize2(seperation);
-	}
+	alignment = normalize2(alignment);
+	cohesion = normalize2(cohesion);
+	seperation = normalize2(seperation);
 
 	float2 desiredVelo;
 	desiredVelo.x = configs[WEIGHT_ALIGNEMENT] * alignment.x + configs[WEIGHT_COHESION] * cohesion.x + configs[WEIGHT_SEPERATION] * seperation.x;

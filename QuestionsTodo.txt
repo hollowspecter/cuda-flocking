@@ -1,9 +1,4 @@
-Questions:
-* Ich krieg keine ordentlichen Random Numbers mit CuRand raus, was is das Problem
-* MAKE MORE schon bei doppelter anzahl => fehler
-
 Todo
-* verschiedene distanzen einstellbar für verschiedene behaviours
 * Collision Avoidance: https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-collision-avoidance--gamedev-7777
 * Flee Arrival https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-flee-and-arrival--gamedev-1303
 

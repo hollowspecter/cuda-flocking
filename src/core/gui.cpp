@@ -16,6 +16,8 @@ Gui::Gui()
 
 	show_debug_window = false;
 	gui_reset_boids = false;
+	gui_enable_flocking = true;
+	gui_enable_wander = true;
 
 	fillConfigs();
 }
@@ -37,6 +39,11 @@ void Gui::fillConfigs() {
 	configs[BOID_MAX_VELOCITY] = MAX_VELOCITY;
 	configs[BOID_MAX_ACCEL] = MAX_ACCELERATION;
 	configs[BOID_SIZE] = 10.f;
+	configs[DISTANCE_ALIGNEMENT] = 100.f;
+	configs[DISTANCE_COHESION] = 100.f;
+	configs[DISTANCE_SEPERATION] = 50.f;
+	configs[GOAL_1_x] = 300.f;
+	configs[GOAL_1_y] = 300.f;
 
 	// init colors
 	color_bg[0] = 24.f / 255.f;
@@ -58,7 +65,11 @@ void Gui::renderImgui()
 	ImGui::Begin("ImGui Demo", &show_debug_window);
 
 	if (ImGui::Button("Reset Boids")) gui_reset_boids ^= 1;
-		
+	ImGui::Checkbox("Flocking Behaviour", &gui_enable_flocking);
+	configs[ENABLE_FLOCKING] = (gui_enable_flocking) ? 1.0f : -1.0f;
+	ImGui::Checkbox("Wander Behaviour", &gui_enable_wander);
+	configs[ENABLE_WANDER] = (gui_enable_flocking) ? 1.0f : -1.0f;
+
 	if (ImGui::CollapsingHeader("Environment Attributes")) {
 		ImGui::ColorEdit3("background color", color_bg);
 	}
@@ -73,9 +84,15 @@ void Gui::renderImgui()
 
 	if (ImGui::CollapsingHeader("Flocking Behaviour"))
 	{
+		ImGui::Text("Alignement");
 		ImGui::SliderFloat("weight: alignement", &configs[WEIGHT_ALIGNEMENT], 0.0f, 1.0f);
+		ImGui::SliderFloat("distance: alignement", &configs[DISTANCE_ALIGNEMENT], 1.0f, 300.0f);
+		ImGui::Text("Cohesion");
 		ImGui::SliderFloat("weight: cohesion", &configs[WEIGHT_COHESION], 0.0f, 1.0f);
+		ImGui::SliderFloat("distance: cohesion", &configs[DISTANCE_COHESION], 1.0f, 300.0f);
+		ImGui::Text("Seperation");
 		ImGui::SliderFloat("weight: seperation", &configs[WEIGHT_SEPERATION], 0.0f, 1.0f);
+		ImGui::SliderFloat("distance: seperation", &configs[DISTANCE_SEPERATION], 1.0f, 300.0f);
 	}
 
 	if (ImGui::CollapsingHeader("Wander Behaviour"))

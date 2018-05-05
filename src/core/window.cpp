@@ -222,14 +222,14 @@ void Window::keyboardCallback(unsigned char key, int /*x*/, int /*y*/) {
 
 void Window::mouseWheel(int button, int dir, int x, int y)
 {
-	if (dir > 0)
+	/*if (dir > 0)
 	{
 		zoom -= 1.f/(1 << 4);
 	}
 	else if (dir < 0)
 	{
 		zoom += 1.f/(1 << 4);
-	}
+	}*/
 	//pGui->guiMouseWheel(button, dir, x, y);
 	glutPostRedisplay();
 }

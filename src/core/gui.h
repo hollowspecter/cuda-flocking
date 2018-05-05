@@ -9,6 +9,8 @@ private:
 	float color_boid[3];
 public:
 	bool gui_reset_boids;
+	bool gui_enable_flocking;
+	bool gui_enable_wander;
 
 	Gui();
 	~Gui();
