@@ -67,6 +67,9 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 		wanderBehavior2(index, pos, accel, velo, rot, wanderAngle, wanderAngularVelo, states, configs);
 	if (configs[ENABLE_FLOCKING] > 0.f)
 		flockingBehavior(index, pos, velo, accel, configs);
+	if (configs[ENABLE_SEEK] > 0.f)
+		seekBehaviour(index, pos, accel, velo, configs);
+
 	///////////////simulation pass
 	applyAcceleration(index, velo, accel, configs);
 	lookWhereYourGoing(index, pos, velo, rot);
@@ -155,10 +158,10 @@ __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, 
 	desiredVelo.x = configs[WEIGHT_ALIGNEMENT] * alignment.x + configs[WEIGHT_COHESION] * cohesion.x + configs[WEIGHT_SEPERATION] * seperation.x;
 	desiredVelo.y = configs[WEIGHT_ALIGNEMENT] * alignment.y + configs[WEIGHT_COHESION] * cohesion.y + configs[WEIGHT_SEPERATION] * seperation.y;
 	desiredVelo = normalize2(desiredVelo);
-	desiredVelo.x *= MAX_VELOCITY;
-	desiredVelo.y *= MAX_VELOCITY;
-	accel[index].x += (desiredVelo.x - velo[index].x);
-	accel[index].y += (desiredVelo.y - velo[index].y);
+	desiredVelo.x *= configs[BOID_MAX_VELOCITY];
+	desiredVelo.y *= configs[BOID_MAX_VELOCITY];
+	accel[index].x += (desiredVelo.x - velo[index].x) * configs[WEIGHT_FLOCKING];
+	accel[index].y += (desiredVelo.y - velo[index].y) * configs[WEIGHT_FLOCKING];
 }
 
 // doesnt work, always aligns on diagonal line
@@ -215,6 +218,19 @@ __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, 
 	wanderAngularVelo[index] += 0.5f * wanderAngularAccel;
 	CLAMP(-MAX_WANDER_VELO, wanderAngularVelo[index], MAX_WANDER_VELO);
 	wanderAngle[index] += 0.5f * wanderAngularVelo[index];
+}
+
+__device__ void seekBehaviour(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *configs) {
+	//desired_velocity = normalize(target - position) * max_velocity
+	//acceleration = desired_velocity - velocity
+	float2 desired_velo;
+	desired_velo.x = configs[GOAL_1_x] - pos[index].x;
+	desired_velo.y = configs[GOAL_1_y] - pos[index].y;
+	normalize2(desired_velo);
+	desired_velo.x *= configs[BOID_MAX_VELOCITY];
+	desired_velo.y *= configs[BOID_MAX_VELOCITY];
+	accel[index].x = (desired_velo.x - velo[index].x) * configs[WEIGHT_SEEK];
+	accel[index].y = (desired_velo.y - velo[index].y) * configs[WEIGHT_SEEK];
 }
 
 ////////////////////////////////////////////////////////////////////////////////

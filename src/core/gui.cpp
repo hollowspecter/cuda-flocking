@@ -18,6 +18,7 @@ Gui::Gui()
 	gui_reset_boids = false;
 	gui_enable_flocking = true;
 	gui_enable_wander = true;
+	gui_enable_seek = true;
 
 	fillConfigs();
 }
@@ -65,12 +66,18 @@ void Gui::renderImgui()
 	ImGui::Begin("ImGui Demo", &show_debug_window);
 
 	if (ImGui::Button("Reset Boids")) gui_reset_boids ^= 1;
-	ImGui::Checkbox("Flocking Behaviour", &gui_enable_flocking);
-	configs[ENABLE_FLOCKING] = (gui_enable_flocking) ? 1.0f : -1.0f;
-	ImGui::Checkbox("Wander Behaviour", &gui_enable_wander);
-	configs[ENABLE_WANDER] = (gui_enable_flocking) ? 1.0f : -1.0f;
 
-	if (ImGui::CollapsingHeader("Environment Attributes")) {
+	ImGui::Checkbox("Enable Flocking", &gui_enable_flocking);
+	configs[ENABLE_FLOCKING] = (gui_enable_flocking) ? 1.0f : -1.0f;
+	ImGui::SameLine();
+	ImGui::Checkbox("Enable Wander", &gui_enable_wander);
+	configs[ENABLE_WANDER] = (gui_enable_wander) ? 1.0f : -1.0f;
+	ImGui::SameLine();
+	ImGui::Checkbox("Enable Seek", &gui_enable_seek);
+	configs[ENABLE_SEEK] = (gui_enable_seek) ? 1.0f : -1.0f;
+
+	if (ImGui::CollapsingHeader("Environment Attributes"))
+	{
 		ImGui::ColorEdit3("background color", color_bg);
 	}
 	
@@ -84,6 +91,8 @@ void Gui::renderImgui()
 
 	if (ImGui::CollapsingHeader("Flocking Behaviour"))
 	{
+		ImGui::Text("Overall");
+		ImGui::SliderFloat("weight: flocking", &configs[WEIGHT_FLOCKING], 0.0f, 1.0f);
 		ImGui::Text("Alignement");
 		ImGui::SliderFloat("weight: alignement", &configs[WEIGHT_ALIGNEMENT], 0.0f, 1.0f);
 		ImGui::SliderFloat("distance: alignement", &configs[DISTANCE_ALIGNEMENT], 1.0f, 300.0f);
@@ -100,10 +109,12 @@ void Gui::renderImgui()
 		ImGui::SliderFloat("weight: wander", &configs[WEIGHT_WANDER], 0.0f, 1.0f);
 	}
 
-	ImGui::End();
+	if (ImGui::CollapsingHeader("Seek Behaviour"))
+	{
+		ImGui::SliderFloat("weight: seek", &configs[WEIGHT_SEEK], 0.0f, 1.0f);
+	}
 
-	//static bool b = true;
-	//ImGui::ShowDemoWindow(&b);
+	ImGui::End();
 
 	ImGui::Render();
 }

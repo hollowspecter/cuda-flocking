@@ -23,7 +23,7 @@
 #define MAX_WANDER_VELO (0.2)
 
 // configuration
-#define NUM_OF_CONFIG_VARS (14)
+#define NUM_OF_CONFIG_VARS (17)
 enum Configuration {
 	WEIGHT_ALIGNEMENT = 0,
 	WEIGHT_COHESION = 1,
@@ -38,5 +38,8 @@ enum Configuration {
 	ENABLE_FLOCKING = 10,
 	ENABLE_WANDER = 11,
 	GOAL_1_x = 12,
-	GOAL_1_y = 13
+	GOAL_1_y = 13,
+	WEIGHT_FLOCKING = 14,
+	WEIGHT_SEEK = 15,
+	ENABLE_SEEK = 16
 };

@@ -37,3 +37,4 @@ __device__ void wanderBehavior(unsigned int index, float2 *pos, float2 *accel, f
 __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *rot, float *wanderAngle, float *wanderAngularVelo, curandState_t *states, float *configs);
 __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, float2 *accel, float *configs);
 __device__ float2 normalize2(float2 p);
+__device__ void seekBehaviour(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *configs);
