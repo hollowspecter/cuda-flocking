@@ -111,7 +111,7 @@ void Window::renderScene(void)
 	glEnableClientState(GL_VERTEX_ARRAY); // enables vertex array
 	color = pGui->getBoidColor();
 	glColor3f(color[0], color[1], color[2]);
-	glDrawArrays(GL_TRIANGLES, 0, 3 * NUMBER_OF_BOIDS);
+	glDrawArrays(GL_TRIANGLES, 0, 6 * NUMBER_OF_BOIDS);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -171,7 +171,7 @@ void Window::deleteVBO()
 
 void Window::runCuda() {
 	// sorting pass
-	launch_simulation_kernel();
+	launch_sorting_kernel();
 
 	// update the boids
 	launch_update_kernel();

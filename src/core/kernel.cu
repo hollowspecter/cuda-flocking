@@ -40,7 +40,8 @@ __global__ void copy_pos_kernel(float2 *pos, float2 *newpos, float *rot, float *
 	//unsigned int boidIndex = threadIdx.x;
 	unsigned int boidIndex = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int pointIndex = boidIndex * 6;
-	float rot1 = -rot[boidIndex] + 90, rot2 = rot1 - 140, rot3 = rot1 + 140;
+	//float rot1 = -rot[boidIndex] + 90, rot2 = rot1 - 140, rot3 = rot1 + 140;
+	float rot1 = 0 + 90, rot2 = rot1 - 140, rot3 = rot1 + 140;
 	float size = configs[BOID_SIZE];
 
 	// first triangle
@@ -80,7 +81,7 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 	applyVelocity(index, pos, velo, configs);
 }
 
-__global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
+__global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int i;
 	float2 ftmp;
@@ -100,10 +101,10 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 	}
 
 	__syncthreads();
-
+	
 
 	// odd columns
-	i += 1;
+	i = 2 * index + 1;
 	if ((i+1) % MAT_SIZE != 0 && // jump the end of one row bc its odd
 		posMat[i].x > posMat[i + 1].x) {
 
@@ -117,6 +118,7 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 	}
 
 	__syncthreads();
+	
 
 	// even lines
 		// x				 // y              *2x row-length
@@ -133,9 +135,10 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 	}
 
 	__syncthreads();
+	
 
 	// odd lines
-	i += MAT_SIZE;
+	i = (index / MAT_SIZE) + (index%MAT_SIZE) * 2 * MAT_SIZE + MAT_SIZE;
 	if (((i + MAT_SIZE) < NUMBER_OF_BOIDS) &&
 		  posMat[i].y < posMat[i + MAT_SIZE].y) {
 		
@@ -147,7 +150,6 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 		attribMat[i] = attribMat[i + MAT_SIZE];
 		attribMat[i + MAT_SIZE] = btmp;
 	}
-	return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -488,10 +490,17 @@ void sortHostPosMatrix() {
 				for (int x = 0; x < n - 1; ++x) {
 					int index1 = x + MAT_SIZE*y,
 						index2 = (x + 1) + MAT_SIZE*y;
+
+					if (index1 >= NUMBER_OF_BOIDS || index2 >= NUMBER_OF_BOIDS) {
+						std::cout << "shit" << std::endl;
+					}
+
 					if (h_mat_pos[index1].x > h_mat_pos[index2].x) {
+
 						float2 temp = h_mat_pos[index1];
 						h_mat_pos[index1] = h_mat_pos[index2];
 						h_mat_pos[index2] = temp;
+
 						swapCount++;
 					}
 				}
@@ -501,11 +510,19 @@ void sortHostPosMatrix() {
 			for (int n = MAT_SIZE; n > 1; --n)
 				for (int y = 0; y < n - 1; ++y) {
 					int index1 = x + MAT_SIZE*y,
-						index2 = x + MAT_SIZE*(y + 1);
+						index2 = x + MAT_SIZE*y + MAT_SIZE;
+
+					if (index1 >= NUMBER_OF_BOIDS || index2 >= NUMBER_OF_BOIDS ||
+						index1 < 0 || index2 < 0) {
+						std::cout << "shit" << std::endl;
+					}
+
 					if (h_mat_pos[index1].y < h_mat_pos[index2].y) {
+
 						float2 temp = h_mat_pos[index1];
 						h_mat_pos[index1] = h_mat_pos[index2];
 						h_mat_pos[index2] = temp;
+
 						swapCount++;
 					}
 				}
@@ -552,11 +569,12 @@ void launch_update_kernel() {
 void launch_vbo_kernel(float2 *pos)
 {
 	//simple_vbo_kernel<<<1,1024>>>(pos, goal, weights);
-	copy_pos_kernel << <numBlocks, threadsPerBlock >> >(pos, d_pos, d_rot, d_configs);
+	//copy_pos_kernel << <numBlocks, threadsPerBlock >> >(pos, d_pos, d_rot, d_configs);
+	copy_pos_kernel << <numBlocks, threadsPerBlock >> >(pos, d_mat_pos, d_rot, d_configs);
 }
 
-void launch_simulation_kernel() {
-	simulation_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
+void launch_sorting_kernel() {
+	sorting_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
 }
 
 // cleans up all the allocated memory on the device

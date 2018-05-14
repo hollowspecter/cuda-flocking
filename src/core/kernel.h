@@ -36,7 +36,7 @@ void cleanupKernel();
 void copy_host_to_device();
 void update_configs(float *configs);
 void initMatrices();
-void launch_simulation_kernel();
+void launch_sorting_kernel();
 void sortHostPosMatrix();
 
 __global__ void copy_pos_kernel(float2 *pos, float2 *newpos, float *rot, float *configs);
@@ -53,3 +53,5 @@ __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, 
 __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, float2 *accel, float *configs);
 __device__ float2 normalize2(float2 p);
 __device__ void seekBehaviour(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *configs);
+__global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat);
+__global__ void sorting_pass2(float2 *posMat, boidAttrib *attribMat);
