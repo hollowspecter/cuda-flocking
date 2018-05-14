@@ -16,6 +16,18 @@
 #include <helper_cuda_gl.h>      // helper functions for CUDA/GL interop
 #include "device_launch_parameters.h" // syncThreads
 
+// Thrust functions
+//#include <thrust/host_vector.h>
+//#include <thrust/device_vector.h>
+
+struct boidAttrib {
+	float2 velo;
+	float2 accel;
+	float rot;
+	float wanderAngle;
+	float wanderAngularVelo;
+};
+
 // methods
 void init_kernel();
 void launch_update_kernel();
@@ -23,6 +35,7 @@ void launch_vbo_kernel(float2 *pos);
 void cleanupKernel();
 void copy_host_to_device();
 void update_configs(float *configs);
+void initMatrices();
 
 __global__ void copy_pos_kernel(float2 *pos, float2 *newpos, float *rot, float *configs);
 __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *rot,

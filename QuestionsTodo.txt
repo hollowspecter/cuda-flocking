@@ -4,6 +4,15 @@ Todo
 
 More behaviours
 * Obstacle Avoidance, avoid borders
-* Goal Seeking
+* Goal Seeking -> goal statisch oder umherwandernd
 * Predator Fleeing
-* Wander behaviour überarbeiten wenn curand funktioniert
+* Wander behaviour überarbeiten?
+
+Spatial Partitioning
+* set a cell-size
+* initialise an array, where each element holds a pointer on a thrust::vector<int> https://docs.nvidia.com/cuda/thrust/index.html
+* each update, fill those vectors, clear them out in the end
+* then just iterate over the "cells" with a givin cell radius
+
+Neighborhood Grid Datastructure
+* initialise the position matrix, and make a struct for second matrix

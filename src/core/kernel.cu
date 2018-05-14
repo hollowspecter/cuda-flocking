@@ -7,12 +7,16 @@ float *d_rot, *d_angVelo, *d_angAccel;
 float *d_wanderAngle, *d_wanderAngularVelo;
 curandState_t *d_states;
 float *d_configs;
+float2 *d_mat_pos; 
+boidAttrib *d_mat_attribs; 
 
 // host variables
 float2 *h_pos, *h_velo, *h_accel;
-float *h_rot;// , *d_angVelo, *d_angAccel;
+float *h_rot;
 float *h_wanderAngle, *h_wanderAngularVelo;
 float *h_configs;
+float2 *h_mat_pos; // the position matrix, basically sorting key
+boidAttrib *h_mat_attribs; // the attribute matrix, that will get sorted as well with the same
 
 const unsigned int threadsPerBlock = 512;
 const unsigned int numBlocks = 8;
@@ -330,11 +334,11 @@ void init_kernel() {
 		h_pos[i].y = (float)(rand() % WINDOW_HEIGHT);
 		h_velo[i].x = 0.f;
 		h_velo[i].y = 0.f;
-		h_accel[i].x = (2.0*float(rand()) / float(RAND_MAX) - 1.0f) * (float)MAX_ACCELERATION;
-		h_accel[i].y = (2.0*float(rand()) / float(RAND_MAX) - 1.0f) * (float)MAX_ACCELERATION;
+		h_accel[i].x = (float)(2.0*float(rand()) / float(RAND_MAX) - 1.0f) * (float)MAX_ACCELERATION;
+		h_accel[i].y = (float)(2.0*float(rand()) / float(RAND_MAX) - 1.0f) * (float)MAX_ACCELERATION;
 		h_rot[i] = (float)(rand() % 360);
 		h_wanderAngle[i] = (rand() % 100) / 100.f * 2.f * (float)M_PI;
-		h_wanderAngularVelo[i] = 0.1f*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f);
+		h_wanderAngularVelo[i] = (float)(0.1f*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f));
 	}
 
 	// allocate device arrays
@@ -349,7 +353,7 @@ void init_kernel() {
 
 	// allocate space for random states
 	checkCudaErrors(cudaMalloc(&d_states, sizeof(curandState_t) * NUMBER_OF_BOIDS));
-	init_states_kernel << <numBlocks, threadsPerBlock >> >(time(0), d_states);
+	init_states_kernel << <numBlocks, threadsPerBlock >> >((unsigned int)time(0), d_states);
 
 	// allocate and init configuration stuff
 	cudaHostAlloc(&h_configs, sizeof(float) * NUM_OF_CONFIG_VARS, cudaHostAllocDefault);
@@ -358,6 +362,84 @@ void init_kernel() {
 	}
 	checkCudaErrors(cudaMalloc(&d_configs, sizeof(float) * NUM_OF_CONFIG_VARS));
 	checkCudaErrors(cudaMemcpy(d_configs, h_configs, sizeof(float) * NUM_OF_CONFIG_VARS, cudaMemcpyHostToDevice));
+
+	/* INIT MATRICES*/
+	initMatrices();
+}
+
+void initMatrices() {
+
+	// allocate host matrices
+	cudaHostAlloc(&h_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaHostAllocDefault);
+	cudaHostAlloc(&h_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS, cudaHostAllocDefault);
+
+	// init host matrices
+	for (int i = 0; i < NUMBER_OF_BOIDS; ++i) {
+		h_mat_pos[i].x = (float)(rand() % WINDOW_WIDTH);
+		h_mat_pos[i].y = (float)(rand() % WINDOW_HEIGHT);
+		h_mat_attribs[i].velo.x = 0.f;
+		h_mat_attribs[i].velo.y = 0.f;
+		h_mat_attribs[i].accel.x = (float)(2.0*float(rand()) / float(RAND_MAX) - 1.0f) * (float)MAX_ACCELERATION;
+		h_mat_attribs[i].accel.y = (float)(2.0*float(rand()) / float(RAND_MAX) - 1.0f) * (float)MAX_ACCELERATION;
+		h_mat_attribs[i].rot = (float)(rand() % 360);
+		h_mat_attribs[i].wanderAngle = (rand() % 100) / 100.f * 2.f * (float)M_PI;
+		h_mat_attribs[i].wanderAngularVelo = (float)(0.1f*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f));
+	}
+
+	//// print 4x4 matrix not sorted
+	//std::cout << std::endl << "Unsortiert" << std::endl;
+	//for (int y = 0; y < 4; ++y) {
+	//	for (int x = 0; x < 4; ++x) {
+	//		std::cout << round(h_mat_pos[x + GRIDSIZE * y].x) << "|" << round(h_mat_pos[x + GRIDSIZE * y].y) << " & ";
+	//	}
+	//	std::cout << std::endl;
+	//}
+
+	// bubble sort rows by pos.x
+	int swapX1 = 0, swapX2 = 0, swapY1 = 0, swapY2 = 0;
+	for (int y = 0; y < GRIDSIZE; ++y) {
+		for (int n = GRIDSIZE; n > 1; --n) {
+			for (int x = 0; x < n - 1; ++x) {
+				int index1 = x + GRIDSIZE*y,
+					index2 = (x + 1) + GRIDSIZE*y;
+				if (h_mat_pos[index1].x > h_mat_pos[index2].x) {
+					float temp = h_mat_pos[index1].x;
+					h_mat_pos[index1].x = h_mat_pos[index2].x;
+					h_mat_pos[index2].x = temp;
+				}
+			}
+		}
+	}
+
+	// bubble sort columns by pos.y
+	for (int x = 0; x < GRIDSIZE; ++x) {
+		for (int n = GRIDSIZE; n > 1; --n) {
+			for (int y = 0; y < n - 1; ++y) {
+				int index1 = x + GRIDSIZE*y,
+					index2 = x + GRIDSIZE*(y + 1);
+				if (h_mat_pos[index1].y < h_mat_pos[index2].y) {
+					float temp = h_mat_pos[index1].y;
+					h_mat_pos[index1].y = h_mat_pos[index2].y;
+					h_mat_pos[index2].y = temp;
+				}
+			}
+		}
+	}
+
+	//// print 4x4 matrix not sorted
+	//std::cout << std::endl << "Einmal sortiert" << std::endl;
+	//for (int y = 0; y < 4; ++y) {
+	//	for (int x = 0; x < 4; ++x) {
+	//		std::cout << round(h_mat_pos[x + GRIDSIZE * y].x) << "|" << round(h_mat_pos[x + GRIDSIZE * y].y) << " & ";
+	//	}
+	//	std::cout << std::endl;
+	//}
+
+	// upload matrices data
+	checkCudaErrors(cudaMalloc(&d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS));
+	checkCudaErrors(cudaMalloc(&d_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS));
+	checkCudaErrors(cudaMemcpy(d_mat_pos, h_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(d_mat_attribs, h_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 }
 
 // used to reset the positions
@@ -400,6 +482,8 @@ void cleanupKernel() {
 	cudaFreeHost(h_wanderAngle);
 	cudaFreeHost(h_wanderAngularVelo);
 	cudaFreeHost(h_configs);
+	cudaFreeHost(h_mat_pos);
+	cudaFreeHost(h_mat_attribs);
 
 	cudaFree(d_pos);
 	cudaFree(d_velo);
@@ -409,4 +493,6 @@ void cleanupKernel() {
 	cudaFree(d_wanderAngularVelo);
 	cudaFree(d_states);
 	cudaFree(d_configs);
+	cudaFree(d_mat_pos);
+	cudaFree(d_mat_attribs);
 }
