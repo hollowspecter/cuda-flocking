@@ -83,16 +83,16 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int i;
-	float ftmp;
+	float2 ftmp;
 	boidAttrib btmp;
 	
 	// even columns
 	i = 2 * index;
 	if (posMat[i].x > posMat[i + 1].x) {
 
-		ftmp = posMat[i].x;
-		posMat[i].x = posMat[i + 1].x;
-		posMat[i + 1].x = ftmp;
+		ftmp = posMat[i];
+		posMat[i] = posMat[i + 1];
+		posMat[i + 1] = ftmp;
 
 		btmp = attribMat[i];
 		attribMat[i] = attribMat[i + 1];
@@ -106,9 +106,9 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 	if (i % (MAT_SIZE - 1) != 0 && // jump the end of one row bc its odd
 		posMat[i].x > posMat[i + 1].x) {
 
-		ftmp = posMat[i].x;
-		posMat[i].x = posMat[i + 1].x;
-		posMat[i + 1].x = ftmp;
+		ftmp = posMat[i];
+		posMat[i] = posMat[i + 1];
+		posMat[i + 1] = ftmp;
 
 		btmp = attribMat[i];
 		attribMat[i] = attribMat[i + 1];
@@ -122,9 +122,9 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 	i = (index / MAT_SIZE) + (index%MAT_SIZE) * 2 * MAT_SIZE;
 	if (posMat[i].y < posMat[i + MAT_SIZE].y) {
 
-		ftmp = posMat[i].y;
-		posMat[i].y = posMat[i + MAT_SIZE].y;
-		posMat[i + MAT_SIZE].y = ftmp;
+		ftmp = posMat[i];
+		posMat[i] = posMat[i + MAT_SIZE];
+		posMat[i + MAT_SIZE] = ftmp;
 
 		btmp = attribMat[i];
 		attribMat[i] = attribMat[i + MAT_SIZE];
@@ -138,9 +138,9 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 	if (((i + MAT_SIZE) < NUMBER_OF_BOIDS) &&
 		  posMat[i].y < posMat[i + MAT_SIZE].y) {
 		
-		ftmp = posMat[i].y;
-		posMat[i].y = posMat[i + MAT_SIZE].y;
-		posMat[i + MAT_SIZE].y = ftmp;
+		ftmp = posMat[i];
+		posMat[i] = posMat[i + MAT_SIZE];
+		posMat[i + MAT_SIZE] = ftmp;
 	
 		btmp = attribMat[i];
 		attribMat[i] = attribMat[i + MAT_SIZE];
@@ -454,54 +454,59 @@ void initMatrices() {
 		h_mat_attribs[i].wanderAngularVelo = (float)(0.1f*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f));
 	}
 
-	//// print 4x4 matrix not sorted
-	//std::cout << std::endl << "Unsortiert" << std::endl;
-	//for (int y = 0; y < 4; ++y) {
-	//	for (int x = 0; x < 4; ++x) {
-	//		std::cout << round(h_mat_pos[x + GRIDSIZE * y].x) << "|" << round(h_mat_pos[x + GRIDSIZE * y].y) << " & ";
-	//	}
-	//	std::cout << std::endl;
-	//}
-
-	// bubble sort rows by pos.x
-	int swapX1 = 0, swapX2 = 0, swapY1 = 0, swapY2 = 0;
-	for (int y = 0; y < MAT_SIZE; ++y) {
-		for (int n = MAT_SIZE; n > 1; --n) {
-			for (int x = 0; x < n - 1; ++x) {
-				int index1 = x + MAT_SIZE*y,
-					index2 = (x + 1) + MAT_SIZE*y;
-				if (h_mat_pos[index1].x > h_mat_pos[index2].x) {
-					float temp = h_mat_pos[index1].x;
-					h_mat_pos[index1].x = h_mat_pos[index2].x;
-					h_mat_pos[index2].x = temp;
-				}
-			}
+	// print 4x4 matrix not sorted
+	std::cout << std::endl << "Unsortiert" << std::endl;
+	for (int y = 0; y < 4; ++y) {
+		for (int x = 0; x < 4; ++x) {
+			std::cout << round(h_mat_pos[x + MAT_SIZE * y].x) << "|" << round(h_mat_pos[x + MAT_SIZE * y].y) << " & ";
 		}
+		std::cout << std::endl;
 	}
 
-	// bubble sort columns by pos.y
-	for (int x = 0; x < MAT_SIZE; ++x) {
-		for (int n = MAT_SIZE; n > 1; --n) {
-			for (int y = 0; y < n - 1; ++y) {
-				int index1 = x + MAT_SIZE*y,
-					index2 = x + MAT_SIZE*(y + 1);
-				if (h_mat_pos[index1].y < h_mat_pos[index2].y) {
-					float temp = h_mat_pos[index1].y;
-					h_mat_pos[index1].y = h_mat_pos[index2].y;
-					h_mat_pos[index2].y = temp;
-				}
-			}
-		}
-	}
+	int swapCount = 0, passCount = 0;
+	do {
+		swapCount = 0;
 
-	//// print 4x4 matrix not sorted
-	//std::cout << std::endl << "Einmal sortiert" << std::endl;
-	//for (int y = 0; y < 4; ++y) {
-	//	for (int x = 0; x < 4; ++x) {
-	//		std::cout << round(h_mat_pos[x + GRIDSIZE * y].x) << "|" << round(h_mat_pos[x + GRIDSIZE * y].y) << " & ";
-	//	}
-	//	std::cout << std::endl;
-	//}
+		// bubble sort rows by pos.x
+		for (int y = 0; y < MAT_SIZE; ++y)
+			for (int n = MAT_SIZE; n > 1; --n)
+				for (int x = 0; x < n - 1; ++x) {
+					int index1 = x + MAT_SIZE*y,
+						index2 = (x + 1) + MAT_SIZE*y;
+					if (h_mat_pos[index1].x > h_mat_pos[index2].x) {
+						float2 temp = h_mat_pos[index1];
+						h_mat_pos[index1] = h_mat_pos[index2];
+						h_mat_pos[index2] = temp;
+						swapCount++;
+					}
+				}
+
+		// bubble sort columns by pos.y
+		for (int x = 0; x < MAT_SIZE; ++x)
+			for (int n = MAT_SIZE; n > 1; --n)
+				for (int y = 0; y < n - 1; ++y) {
+					int index1 = x + MAT_SIZE*y,
+						index2 = x + MAT_SIZE*(y + 1);
+					if (h_mat_pos[index1].y < h_mat_pos[index2].y) {
+						float2 temp = h_mat_pos[index1];
+						h_mat_pos[index1] = h_mat_pos[index2];
+						h_mat_pos[index2] = temp;
+						swapCount++;
+					}
+				}
+
+		std::cout << "Pass " << passCount++ << ": " << swapCount << " Swaps" << std::endl;
+	} while (swapCount > 0);
+	
+
+	// print 4x4 matrix not sorted
+	std::cout << std::endl << "Einmal sortiert" << std::endl;
+	for (int y = 0; y < 4; ++y) {
+		for (int x = 0; x < 4; ++x) {
+			std::cout << round(h_mat_pos[x + MAT_SIZE * y].x) << "|" << round(h_mat_pos[x + MAT_SIZE * y].y) << " & ";
+		}
+		std::cout << std::endl;
+	}
 
 	// upload matrices data
 	checkCudaErrors(cudaMalloc(&d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS));
@@ -547,6 +552,17 @@ void launch_simulation_kernel() {
 
 // cleans up all the allocated memory on the device
 void cleanupKernel() {
+
+	checkCudaErrors(cudaMemcpy(h_mat_pos, d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyDeviceToHost));
+	// print 4x4 matrix not sorted
+	std::cout << std::endl << "Nach Sorting Passes immernoch sortiert?" << std::endl;
+	for (int y = 0; y < 4; ++y) {
+		for (int x = 0; x < 4; ++x) {
+			std::cout << round(h_mat_pos[x + MAT_SIZE * y].x) << "|" << round(h_mat_pos[x + MAT_SIZE * y].y) << " & ";
+		}
+		std::cout << std::endl;
+	}
+
 	cudaFreeHost(h_pos);
 	cudaFreeHost(h_velo);
 	cudaFreeHost(h_accel);
