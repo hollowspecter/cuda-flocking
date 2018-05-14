@@ -101,9 +101,10 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 
 	__syncthreads();
 
+
 	// odd columns
 	i += 1;
-	if (i % (MAT_SIZE - 1) != 0 && // jump the end of one row bc its odd
+	if ((i+1) % MAT_SIZE != 0 && // jump the end of one row bc its odd
 		posMat[i].x > posMat[i + 1].x) {
 
 		ftmp = posMat[i];
@@ -146,6 +147,7 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 		attribMat[i] = attribMat[i + MAT_SIZE];
 		attribMat[i + MAT_SIZE] = btmp;
 	}
+	return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -435,6 +437,7 @@ void init_kernel() {
 	initMatrices();
 }
 
+// initialize the boid matrices
 void initMatrices() {
 
 	// allocate host matrices
@@ -454,6 +457,18 @@ void initMatrices() {
 		h_mat_attribs[i].wanderAngularVelo = (float)(0.1f*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f));
 	}
 
+	// sort host  matrix before uploading to device
+	sortHostPosMatrix();
+
+	// upload matrices data
+	checkCudaErrors(cudaMalloc(&d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS));
+	checkCudaErrors(cudaMalloc(&d_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS));
+	checkCudaErrors(cudaMemcpy(d_mat_pos, h_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(d_mat_attribs, h_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
+}
+
+// sort the pos matrix on host
+void sortHostPosMatrix() {
 	// print 4x4 matrix not sorted
 	std::cout << std::endl << "Unsortiert" << std::endl;
 	for (int y = 0; y < 4; ++y) {
@@ -497,22 +512,16 @@ void initMatrices() {
 
 		std::cout << "Pass " << passCount++ << ": " << swapCount << " Swaps" << std::endl;
 	} while (swapCount > 0);
-	
+
 
 	// print 4x4 matrix not sorted
-	std::cout << std::endl << "Einmal sortiert" << std::endl;
+	std::cout << std::endl << "Sortiert" << std::endl;
 	for (int y = 0; y < 4; ++y) {
 		for (int x = 0; x < 4; ++x) {
 			std::cout << round(h_mat_pos[x + MAT_SIZE * y].x) << "|" << round(h_mat_pos[x + MAT_SIZE * y].y) << " & ";
 		}
 		std::cout << std::endl;
 	}
-
-	// upload matrices data
-	checkCudaErrors(cudaMalloc(&d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS));
-	checkCudaErrors(cudaMalloc(&d_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS));
-	checkCudaErrors(cudaMemcpy(d_mat_pos, h_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(d_mat_attribs, h_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 }
 
 // used to reset the positions
@@ -554,14 +563,9 @@ void launch_simulation_kernel() {
 void cleanupKernel() {
 
 	checkCudaErrors(cudaMemcpy(h_mat_pos, d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyDeviceToHost));
-	// print 4x4 matrix not sorted
-	std::cout << std::endl << "Nach Sorting Passes immernoch sortiert?" << std::endl;
-	for (int y = 0; y < 4; ++y) {
-		for (int x = 0; x < 4; ++x) {
-			std::cout << round(h_mat_pos[x + MAT_SIZE * y].x) << "|" << round(h_mat_pos[x + MAT_SIZE * y].y) << " & ";
-		}
-		std::cout << std::endl;
-	}
+	
+	// sort again to check
+	sortHostPosMatrix();
 
 	cudaFreeHost(h_pos);
 	cudaFreeHost(h_velo);

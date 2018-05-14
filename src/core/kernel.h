@@ -37,6 +37,7 @@ void copy_host_to_device();
 void update_configs(float *configs);
 void initMatrices();
 void launch_simulation_kernel();
+void sortHostPosMatrix();
 
 __global__ void copy_pos_kernel(float2 *pos, float2 *newpos, float *rot, float *configs);
 __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *rot,
