@@ -170,6 +170,9 @@ void Window::deleteVBO()
 }
 
 void Window::runCuda() {
+	// sorting pass
+	launch_simulation_kernel();
+
 	// update the boids
 	launch_update_kernel();
 

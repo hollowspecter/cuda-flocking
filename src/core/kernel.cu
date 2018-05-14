@@ -80,6 +80,54 @@ __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *
 	applyVelocity(index, pos, velo, configs);
 }
 
+__global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
+	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int i;
+	float ftmp;
+	boidAttrib btmp;
+	
+	// even columns
+	i = 2 * index;
+	if (posMat[i].x > posMat[i + 1].x) {
+		ftmp = posMat[i].x;
+		posMat[i].x = posMat[i + 1].x;
+		posMat[i + 1].x = ftmp;
+	}
+
+	__syncthreads();
+
+	// odd columns
+	i += 1;
+	if (i % (MAT_SIZE - 1) != 0 && // jump the end of one row bc its odd
+		posMat[i].x > posMat[i + 1].x) {
+		ftmp = posMat[i].x;
+		posMat[i].x = posMat[i + 1].x;
+		posMat[i + 1].x = ftmp;
+	}
+
+	__syncthreads();
+
+	// even lines
+		// x				 // y              *2x row-length
+	i = (index / MAT_SIZE) + (index%MAT_SIZE) * 2 * MAT_SIZE;
+	if (posMat[i].y < posMat[i + MAT_SIZE].y) {
+		ftmp = posMat[i].y;
+		posMat[i].y = posMat[i + MAT_SIZE].y;
+		posMat[i + MAT_SIZE].y = ftmp;
+	}
+
+	__syncthreads();
+
+	// odd lines
+	i += MAT_SIZE;
+	if (((i + MAT_SIZE) < NUMBER_OF_BOIDS) &&
+		  posMat[i].y < posMat[i + MAT_SIZE].y) {
+		ftmp = posMat[i].y;
+		posMat[i].y = posMat[i + MAT_SIZE].y;
+		posMat[i + MAT_SIZE].y = ftmp;
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // BEHAVIOUR FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
@@ -397,11 +445,11 @@ void initMatrices() {
 
 	// bubble sort rows by pos.x
 	int swapX1 = 0, swapX2 = 0, swapY1 = 0, swapY2 = 0;
-	for (int y = 0; y < GRIDSIZE; ++y) {
-		for (int n = GRIDSIZE; n > 1; --n) {
+	for (int y = 0; y < MAT_SIZE; ++y) {
+		for (int n = MAT_SIZE; n > 1; --n) {
 			for (int x = 0; x < n - 1; ++x) {
-				int index1 = x + GRIDSIZE*y,
-					index2 = (x + 1) + GRIDSIZE*y;
+				int index1 = x + MAT_SIZE*y,
+					index2 = (x + 1) + MAT_SIZE*y;
 				if (h_mat_pos[index1].x > h_mat_pos[index2].x) {
 					float temp = h_mat_pos[index1].x;
 					h_mat_pos[index1].x = h_mat_pos[index2].x;
@@ -412,11 +460,11 @@ void initMatrices() {
 	}
 
 	// bubble sort columns by pos.y
-	for (int x = 0; x < GRIDSIZE; ++x) {
-		for (int n = GRIDSIZE; n > 1; --n) {
+	for (int x = 0; x < MAT_SIZE; ++x) {
+		for (int n = MAT_SIZE; n > 1; --n) {
 			for (int y = 0; y < n - 1; ++y) {
-				int index1 = x + GRIDSIZE*y,
-					index2 = x + GRIDSIZE*(y + 1);
+				int index1 = x + MAT_SIZE*y,
+					index2 = x + MAT_SIZE*(y + 1);
 				if (h_mat_pos[index1].y < h_mat_pos[index2].y) {
 					float temp = h_mat_pos[index1].y;
 					h_mat_pos[index1].y = h_mat_pos[index2].y;
@@ -471,6 +519,10 @@ void launch_vbo_kernel(float2 *pos)
 {
 	//simple_vbo_kernel<<<1,1024>>>(pos, goal, weights);
 	copy_pos_kernel << <numBlocks, threadsPerBlock >> >(pos, d_pos, d_rot, d_configs);
+}
+
+void launch_simulation_kernel() {
+	simulation_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
 }
 
 // cleans up all the allocated memory on the device
