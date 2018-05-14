@@ -89,9 +89,14 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 	// even columns
 	i = 2 * index;
 	if (posMat[i].x > posMat[i + 1].x) {
+
 		ftmp = posMat[i].x;
 		posMat[i].x = posMat[i + 1].x;
 		posMat[i + 1].x = ftmp;
+
+		btmp = attribMat[i];
+		attribMat[i] = attribMat[i + 1];
+		attribMat[i + 1] = btmp;
 	}
 
 	__syncthreads();
@@ -100,9 +105,14 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 	i += 1;
 	if (i % (MAT_SIZE - 1) != 0 && // jump the end of one row bc its odd
 		posMat[i].x > posMat[i + 1].x) {
+
 		ftmp = posMat[i].x;
 		posMat[i].x = posMat[i + 1].x;
 		posMat[i + 1].x = ftmp;
+
+		btmp = attribMat[i];
+		attribMat[i] = attribMat[i + 1];
+		attribMat[i + 1] = btmp;
 	}
 
 	__syncthreads();
@@ -111,9 +121,14 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 		// x				 // y              *2x row-length
 	i = (index / MAT_SIZE) + (index%MAT_SIZE) * 2 * MAT_SIZE;
 	if (posMat[i].y < posMat[i + MAT_SIZE].y) {
+
 		ftmp = posMat[i].y;
 		posMat[i].y = posMat[i + MAT_SIZE].y;
 		posMat[i + MAT_SIZE].y = ftmp;
+
+		btmp = attribMat[i];
+		attribMat[i] = attribMat[i + MAT_SIZE];
+		attribMat[i + MAT_SIZE] = btmp;
 	}
 
 	__syncthreads();
@@ -122,9 +137,14 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat) {
 	i += MAT_SIZE;
 	if (((i + MAT_SIZE) < NUMBER_OF_BOIDS) &&
 		  posMat[i].y < posMat[i + MAT_SIZE].y) {
+		
 		ftmp = posMat[i].y;
 		posMat[i].y = posMat[i + MAT_SIZE].y;
 		posMat[i + MAT_SIZE].y = ftmp;
+	
+		btmp = attribMat[i];
+		attribMat[i] = attribMat[i + MAT_SIZE];
+		attribMat[i + MAT_SIZE] = btmp;
 	}
 }
 
