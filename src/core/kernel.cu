@@ -35,6 +35,7 @@ __global__ void init_states_kernel(unsigned int seed, curandState_t *states) {
 		&states[threadIdx.x]);
 }
 
+#pragma deprecated
 __global__ void copy_pos_kernel(float2 *pos, float2 *newpos, float *rot, float *configs)
 {
 	//unsigned int boidIndex = threadIdx.x;
@@ -86,6 +87,7 @@ __global__ void vbo_pass(float2 *pos, float2 *posMat, boidAttrib *attribMat, flo
 	pos[pointIndex + 5].y = posMat[boidIndex].y + sinf(DEG_TO_RAD(rot3)) * size;
 }
 
+#pragma deprecated
 __global__ void update_kernel(float2 *pos, float2 *velo, float2  *accel, float *rot,
 	float *wanderAngle, float *wanderAngularVelo, curandState_t *states, float *configs)
 {
@@ -182,12 +184,12 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
 
 	///////////////behaviour pass
-	/*if (configs[ENABLE_WANDER] > 0.f)
-		wanderBehavior2(index, posMat, attribMat, states, configs);*/
+	if (configs[ENABLE_WANDER] > 0.f)
+		wanderBehavior(index, posMat, attribMat, states, configs);
 	if (configs[ENABLE_FLOCKING] > 0.f)
 		flockingBehavior(index, posMat, attribMat, configs);
-	/*if (configs[ENABLE_SEEK] > 0.f)
-		seekBehaviour(index, posMat, attribMat, configs);*/
+	if (configs[ENABLE_SEEK] > 0.f)
+		seekBehaviour(index, posMat, attribMat, configs);
 
 	///////////////simulation pass
 	applyAcceleration(index, attribMat, configs);
@@ -285,6 +287,7 @@ __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, 
 }
 
 // doesnt work, always aligns on diagonal line
+#pragma deprecated
 __device__ void wanderBehavior(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *rot, float *wanderAngle, float *wanderAngularVelo, curandState_t *states) {
 	// wander behaviour
 	float2 circleCenter = make_float2(0.0f, 0.0f),
@@ -315,6 +318,7 @@ __device__ void wanderBehavior(unsigned int index, float2 *pos, float2 *accel, f
 	wanderAngle[index] += 0.5f * wanderAngularVelo[index];
 }
 
+#pragma deprecated
 __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *rot, float *wanderAngle, float *wanderAngularVelo, curandState_t *states, float *configs) {
 	// wander behaviour from here: https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-wander--gamedev-1624
 	float2 circleCenter = make_float2(0.0f, 0.0f),
@@ -340,6 +344,7 @@ __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, 
 	wanderAngle[index] += 0.5f * wanderAngularVelo[index];
 }
 
+#pragma deprecated
 __device__ void seekBehaviour(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *configs) {
 	//desired_velocity = normalize(target - position) * max_velocity
 	//acceleration = desired_velocity - velocity
@@ -353,8 +358,18 @@ __device__ void seekBehaviour(unsigned int index, float2 *pos, float2 *accel, fl
 	accel[index].y = (desired_velo.y - velo[index].y) * configs[WEIGHT_SEEK];
 }
 
-
-
+__device__ void seekBehaviour(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs) {
+	//desired_velocity = normalize(target - position) * max_velocity
+	//acceleration = desired_velocity - velocity
+	float2 desired_velo;
+	desired_velo.x = configs[GOAL_1_x] - posMat[index].x;
+	desired_velo.y = configs[GOAL_1_y] - posMat[index].y;
+	normalize2(desired_velo);
+	desired_velo.x *= configs[BOID_MAX_VELOCITY];
+	desired_velo.y *= configs[BOID_MAX_VELOCITY];
+	attribMat[index].accel.x = (desired_velo.x - attribMat[index].velo.x) * configs[WEIGHT_SEEK];
+	attribMat[index].accel.y = (desired_velo.y - attribMat[index].velo.y) * configs[WEIGHT_SEEK];
+}
 
 __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs) {
 	// calculate the extended moore neighborhood
@@ -374,6 +389,7 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	float2 seperation = make_float2(0.f, 0.f);
 	int numNeighborsAlignement = 0, numNeighborsCohesion = 0, numNeighborsSeperation = 0;
 
+	// for (int i=0; i<NUMBER_OF_BOIDS; ++i) {
 	for (int x = startX; x<endX; ++x)
 		for (int y = startY; y < endY; ++y) {
 			// calc index
@@ -443,6 +459,31 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	desiredVelo.y *= configs[BOID_MAX_VELOCITY];
 	attribMat[index].accel.x += (desiredVelo.x - attribMat[index].velo.x) * configs[WEIGHT_FLOCKING];
 	attribMat[index].accel.y += (desiredVelo.y - attribMat[index].velo.y) * configs[WEIGHT_FLOCKING];
+}
+
+__device__ void wanderBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, curandState_t *states, float *configs) {
+	// wander behaviour from here: https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-wander--gamedev-1624
+	float2 circleCenter = make_float2(0.0f, 0.0f),
+		displacement = make_float2(0.0f, -1.f);
+	// calculate circle center
+	circleCenter.x = attribMat[index].velo.x;
+	circleCenter.y = attribMat[index].velo.y;
+	circleCenter = normalize2(circleCenter);
+	circleCenter.x *= CENTER_OFFSET;
+	circleCenter.y *= CENTER_OFFSET;
+
+	// calculate displacement force
+	displacement.x = cosf(attribMat[index].wanderAngle) * WANDER_RADIUS;
+	displacement.y = sinf(attribMat[index].wanderAngle) * WANDER_RADIUS;
+
+	attribMat[index].accel.x = (circleCenter.x + displacement.x) * configs[WEIGHT_WANDER];
+	attribMat[index].accel.y = (circleCenter.y + displacement.y) * configs[WEIGHT_WANDER];
+
+	// move the circle point randomly on the circular path by changing the wanderAngle
+	float wanderAngularAccel = (0.2*double(curand(&states[index])) / double(RAND_MAX) - 0.1);
+	attribMat[index].wanderAngularVelo += 0.5f * wanderAngularAccel;
+	CLAMP(-MAX_WANDER_VELO, attribMat[index].wanderAngularVelo, MAX_WANDER_VELO);
+	attribMat[index].wanderAngle += 0.5f * attribMat[index].wanderAngularVelo;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -8,15 +8,17 @@ More behaviours
 * Predator Fleeing
 * Wander behaviour überarbeiten?
 
-Spatial Partitioning
-* set a cell-size
-* initialise an array, where each element holds a pointer on a thrust::vector<int> https://docs.nvidia.com/cuda/thrust/index.html
-* each update, fill those vectors, clear them out in the end
-* then just iterate over the "cells" with a givin cell radius
-
 Neighborhood Grid Datastructure
 * initialise the position matrix, and make a struct for second matrix
 
 NEXT TODO:
 * seek behaviour
 * wander behaviour einbauen!!!!
+* bug ausmerzen
+* obstacle avoidance mit einbauen
+* die anderen zwei regeln einbauen zum sortieren!
+* sorting pass überprüfen
+	* wird x achse richtig sortiert?
+	* wird y achse richtig sortiert?
+* accumulate the different behaviours in one weighted addition
+=> 2 verschiedene szenarien erstellen

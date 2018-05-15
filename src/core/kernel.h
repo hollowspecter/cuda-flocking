@@ -59,3 +59,5 @@ __device__ void applyVelocity(unsigned int index, float2 *posMat, boidAttrib *at
 __device__ void lookWhereYourGoing(unsigned int index, float2 *posMat, boidAttrib *attribMat);
 __device__ void applyAcceleration(unsigned int index, boidAttrib *attribMat, float *configs);
 __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs);
+__device__ void seekBehaviour(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs);
+__device__ void wanderBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, curandState_t *states, float *configs);
