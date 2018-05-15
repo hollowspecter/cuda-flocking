@@ -53,5 +53,8 @@ __device__ void wanderBehavior2(unsigned int index, float2 *pos, float2 *accel, 
 __device__ void flockingBehavior(unsigned int index, float2 *pos, float2 *velo, float2 *accel, float *configs);
 __device__ float2 normalize2(float2 p);
 __device__ void seekBehaviour(unsigned int index, float2 *pos, float2 *accel, float2 *velo, float *configs);
+
 __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat);
-__global__ void sorting_pass2(float2 *posMat, boidAttrib *attribMat);
+__device__ void applyVelocity(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs);
+__device__ void lookWhereYourGoing(unsigned int index, float2 *posMat, boidAttrib *attribMat);
+__device__ void applyAcceleration(unsigned int index, boidAttrib *attribMat, float *configs);
