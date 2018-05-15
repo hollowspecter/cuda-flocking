@@ -16,3 +16,7 @@ Spatial Partitioning
 
 Neighborhood Grid Datastructure
 * initialise the position matrix, and make a struct for second matrix
+
+NEXT TODO:
+* seek behaviour
+* wander behaviour einbauen!!!!

@@ -357,47 +357,61 @@ __device__ void seekBehaviour(unsigned int index, float2 *pos, float2 *accel, fl
 
 
 __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs) {
+	// calculate the extended moore neighborhood
+	int radius = configs[NEIGHBORHOOD_RADIUS];
+	int startX = (index / MAT_SIZE) - radius;
+	int startY = (index % MAT_SIZE) - radius;
+	int endX = startX + 2 * radius;
+	int endY = startY + 2 * radius;
+	if (startX < 0) startX = 0;
+	if (startY < 0) startY = 0;
+	if (endX > MAT_SIZE) endX = MAT_SIZE;
+	if (endY > MAT_SIZE) endY = MAT_SIZE;
+	
 	// implement alignment, cohesion and seperation vectors
 	float2 alignment = make_float2(0.f, 0.f);
 	float2 cohesion = make_float2(0.f, 0.f);
 	float2 seperation = make_float2(0.f, 0.f);
-
-
-
 	int numNeighborsAlignement = 0, numNeighborsCohesion = 0, numNeighborsSeperation = 0;
-	for (int i = 0; i < NUMBER_OF_BOIDS; ++i) {
-		// skip yourself
-		if (i == index)
-			continue;
 
-		// calculate squareDistance
-		float dx = posMat[index].x - posMat[i].x;
-		float dy = posMat[index].y - posMat[i].y;
-		float sqrDistance = dx * dx + dy * dy;
+	for (int x = startX; x<endX; ++x)
+		for (int y = startY; y < endY; ++y) {
+			// calc index
+			int i = x + y*MAT_SIZE;
+			// skip yourself
+			if (i == index)
+				continue;
 
-		// for every close neighbor, alignement
-		float sqrThreshold = configs[DISTANCE_ALIGNEMENT];
-		sqrThreshold *= sqrThreshold;
-		if (sqrDistance < sqrThreshold) {
-			numNeighborsAlignement++;
-			alignment.x += attribMat[i].velo.x;
-			alignment.y += attribMat[i].velo.y;
-		}
-		sqrThreshold = configs[DISTANCE_COHESION];
-		sqrThreshold *= sqrThreshold;
-		if (sqrDistance < sqrThreshold) {
-			numNeighborsCohesion++;
-			cohesion.x += posMat[i].x;
-			cohesion.y += posMat[i].y;
-		}
-		sqrThreshold = configs[DISTANCE_SEPERATION];
-		sqrThreshold *= sqrThreshold;
-		if (sqrDistance < sqrThreshold) {
-			numNeighborsSeperation++;
-			seperation.x += dx;
-			seperation.y += dy;
-		}
-	}//endfor
+			// calculate squareDistance
+			float dx = posMat[index].x - posMat[i].x;
+			float dy = posMat[index].y - posMat[i].y;
+			float sqrDistance = dx * dx + dy * dy;
+
+			// for every close neighbor, alignement
+			float sqrThreshold = configs[DISTANCE_ALIGNEMENT];
+			sqrThreshold *= sqrThreshold;
+			if (sqrDistance < sqrThreshold) {
+				numNeighborsAlignement++;
+				alignment.x += attribMat[i].velo.x;
+				alignment.y += attribMat[i].velo.y;
+			}
+			sqrThreshold = configs[DISTANCE_COHESION];
+			sqrThreshold *= sqrThreshold;
+			if (sqrDistance < sqrThreshold) {
+				numNeighborsCohesion++;
+				cohesion.x += posMat[i].x;
+				cohesion.y += posMat[i].y;
+			}
+			sqrThreshold = configs[DISTANCE_SEPERATION];
+			sqrThreshold *= sqrThreshold;
+			if (sqrDistance < sqrThreshold) {
+				numNeighborsSeperation++;
+				seperation.x += dx;
+				seperation.y += dy;
+			}
+		}//endfor
+
+	__syncthreads();
 
 	 // no neighbors found?
 	if (numNeighborsAlignement == 0) {
@@ -591,8 +605,6 @@ void init_kernel() {
 	checkCudaErrors(cudaMalloc(&d_wanderAngle, sizeof(float) * NUMBER_OF_BOIDS));
 	checkCudaErrors(cudaMalloc(&d_wanderAngularVelo, sizeof(float) * NUMBER_OF_BOIDS));
 
-	copy_host_to_device();
-
 	// allocate space for random states
 	checkCudaErrors(cudaMalloc(&d_states, sizeof(curandState_t) * NUMBER_OF_BOIDS));
 	init_states_kernel << <numBlocks, threadsPerBlock >> >((unsigned int)time(0), d_states);
@@ -607,6 +619,8 @@ void init_kernel() {
 
 	/* INIT MATRICES*/
 	initMatrices();
+
+	copy_host_to_device();
 }
 
 // initialize the boid matrices
@@ -635,8 +649,7 @@ void initMatrices() {
 	// upload matrices data
 	checkCudaErrors(cudaMalloc(&d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS));
 	checkCudaErrors(cudaMalloc(&d_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS));
-	checkCudaErrors(cudaMemcpy(d_mat_pos, h_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaMemcpy(d_mat_attribs, h_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
+	
 }
 
 // sort the pos matrix on host
@@ -709,6 +722,8 @@ void copy_host_to_device() {
 	checkCudaErrors(cudaMemcpy(d_rot, h_rot, sizeof(float) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_wanderAngle, h_wanderAngle, sizeof(float) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_wanderAngularVelo, h_wanderAngularVelo, sizeof(float) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(d_mat_pos, h_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
+	checkCudaErrors(cudaMemcpy(d_mat_attribs, h_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS, cudaMemcpyHostToDevice));
 }
 
 void update_configs(float *configs) {

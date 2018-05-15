@@ -58,3 +58,4 @@ __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat);
 __device__ void applyVelocity(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs);
 __device__ void lookWhereYourGoing(unsigned int index, float2 *posMat, boidAttrib *attribMat);
 __device__ void applyAcceleration(unsigned int index, boidAttrib *attribMat, float *configs);
+__device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs);

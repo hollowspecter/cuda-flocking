@@ -45,6 +45,7 @@ void Gui::fillConfigs() {
 	configs[DISTANCE_SEPERATION] = 50.f;
 	configs[GOAL_1_x] = 300.f;
 	configs[GOAL_1_y] = 300.f;
+	configs[NEIGHBORHOOD_RADIUS] = 2.0f;
 
 	// init colors
 	color_bg[0] = 24.f / 255.f;
@@ -102,6 +103,11 @@ void Gui::renderImgui()
 		ImGui::Text("Seperation");
 		ImGui::SliderFloat("weight: seperation", &configs[WEIGHT_SEPERATION], 0.0f, 1.0f);
 		ImGui::SliderFloat("distance: seperation", &configs[DISTANCE_SEPERATION], 1.0f, 300.0f);
+
+		ImGui::Text("Moore Neighborhood Radius");
+		int radius = configs[NEIGHBORHOOD_RADIUS];
+		ImGui::SliderInt("Neighborhood Radius", &radius, 1.0f, 30.0f);
+		configs[NEIGHBORHOOD_RADIUS] = radius;
 	}
 
 	if (ImGui::CollapsingHeader("Wander Behaviour"))
