@@ -14,26 +14,28 @@ The steps for the interopability that this project uses:
 4. Run Cuda kernel to modify the vertex positions
 5. Unmap the VBO
 6. Render the results using OpenGL
-    
+
 
 ## The files
-Currently in this project there are just a few files:
-1. flocking.h
-2. kernel.h
-3. defs.h
-
-### flocking.h
-This file contains the main function and initializes all the OpenGL functions.
+1. core/kernel.cu
+2. core/window.cpp
+3. core/gui.cpp
 
 ### kernel.h
 Here's all the CUDA stuff is stored in.
+There are three GPU passes.
+1. Sorting pass: This is used to sort the data structure of the boids for optimization
+2. Simulation pass: simulates the boids with all the different behaviours, applies, acceleration and velocity using euler integration
+3. VBO pass: generates the VBO vertex data using the boids position and rotation
 
-* ``void init_kernel();``: Allocates the neccessary memory on the CUDA device and makes any kernel calls to initialize
-* ``void launch_update_kernel();``: This launches the kernel ``update_kernel`` and basically represents one simulation step. This function is called once every frame.
-* ``void launch_vbo_kernel(float2 *pos);``: This launches the kernel ``copy_pos_kernel``. It's also called once per frame and copies the the boid data into the vbo. Afterwards OpenGL renders it.
+All the other functions are helper functions.
 
-### defs.h
-is just a bunch of defines.
+### window.cpp
+Contains all the OpenGL code.
+This example is just a simple OpenGL application with only one VBO and a single draw call.
+
+### gui.cpp
+Manages the imgui window and holds all the configurations.
 
 ## Flocking Behaviours
 All the flocking simulation is done in ``kernel.h``. For each boid, following information is stored in seperate arrays, allocated on the device (GPU):
