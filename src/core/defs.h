@@ -8,8 +8,12 @@
 #define SQR_LOOK_DISTANCE 1000 // for flocking behaviour
 #define MAX_VELOCITY 100.0
 #define MAX_ACCELERATION 50.0
-#define NUMBER_OF_BOIDS 4096 // 64x64 grid
-#define MAT_SIZE 64
+
+#define NUMBER_OF_BOIDS 16384 // 64x64 grid
+#define MAT_SIZE 128
+#define THREADS_PER_BLOCK 1024
+#define NUM_BLOCKS 16
+
 #define DELTA_TIME 0.0166
 #define WINDOW_WIDTH 1920
 #define WINDOW_HEIGHT 1080

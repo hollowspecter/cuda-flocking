@@ -12,8 +12,8 @@ float *h_configs;
 float2 *h_mat_pos; // the position matrix, basically sorting key
 boidAttrib *h_mat_attribs; // the attribute matrix, that will get sorted as well with the same
 
-const unsigned int threadsPerBlock = 512;
-const unsigned int numBlocks = 8;
+const unsigned int threadsPerBlock = THREADS_PER_BLOCK;
+const unsigned int numBlocks = NUM_BLOCKS;
 
 ////////////////////////////////////////////////////////////////////////////////
 // CUDA KERNEL FUNCTIONS
@@ -533,6 +533,9 @@ void launch_vbo_kernel(float2 *pos)
 
 void launch_sorting_kernel() {
 	sorting_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
+	//sorting_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
+	//sorting_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
+	//sorting_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
 }
 
 // cleans up all the allocated memory on the device
