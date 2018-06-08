@@ -149,7 +149,7 @@ void Gui::guiKeyboard(unsigned char key, int /*x*/, int /*y*/) {
 }
 void Gui::guiMousePos(int x, int y) {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ImVec2((float)x, (float)y + 227.f);
+	io.MousePos = ImVec2((float)x, (float)y + 0.f);
 }
 void Gui::guiMouseWheel(int button, int dir, int x, int y) {
 	ImGuiIO& io = ImGui::GetIO();

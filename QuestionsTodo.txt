@@ -5,11 +5,10 @@ Todo
 More behaviours
 * Obstacle Avoidance, avoid borders
 * Goal Seeking -> goal statisch oder umherwandernd
-* Predator Fleeing
 * Wander behaviour überarbeiten?
 
 NEXT TODO:
-* seek behaviour
+* seek behaviour -> flee arrival einbauen
 * wander behaviour einbauen!!!!
 * bug ausmerzen
 * obstacle avoidance mit einbauen
@@ -19,3 +18,5 @@ NEXT TODO:
 	* wird y achse richtig sortiert?
 * accumulate the different behaviours in one weighted addition
 => 2 verschiedene szenarien erstellen
+
+=> Dokumentation anfangen
