@@ -20,3 +20,6 @@ NEXT TODO:
 => 2 verschiedene szenarien erstellen
 
 => Dokumentation anfangen
+
+NICE TO HAVE:
+* sweet colors

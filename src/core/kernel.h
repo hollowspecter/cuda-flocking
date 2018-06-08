@@ -22,6 +22,9 @@ struct boidAttrib {
 	float rot;
 	float wanderAngle;
 	float wanderAngularVelo;
+	float2 resultFlocking;
+	float2 resultWander;
+	float2 resultSeek;
 };
 
 // host functions

@@ -137,6 +137,16 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 	if (configs[ENABLE_SEEK] > 0.f)
 		seekBehaviour(index, posMat, attribMat, configs);
 
+	// weighted addition over all the behaviours
+	attribMat[index].accel.x =
+		attribMat[index].resultWander.x * configs[WEIGHT_WANDER]
+		+ attribMat[index].resultFlocking.x * configs[WEIGHT_FLOCKING]
+		+ attribMat[index].resultSeek.x * configs[WEIGHT_SEEK];
+	attribMat[index].accel.y =
+		attribMat[index].resultWander.y * configs[WEIGHT_WANDER]
+		+ attribMat[index].resultFlocking.y * configs[WEIGHT_FLOCKING]
+		+ attribMat[index].resultSeek.y * configs[WEIGHT_SEEK];
+
 	///////////////simulation pass
 	applyAcceleration(index, attribMat, configs);
 	lookWhereYourGoing(index, posMat, attribMat);
@@ -156,8 +166,13 @@ __device__ void seekBehaviour(unsigned int index, float2 *posMat, boidAttrib *at
 	normalize2(desired_velo);
 	desired_velo.x *= configs[BOID_MAX_VELOCITY];
 	desired_velo.y *= configs[BOID_MAX_VELOCITY];
-	attribMat[index].accel.x = (desired_velo.x - attribMat[index].velo.x) * configs[WEIGHT_SEEK];
-	attribMat[index].accel.y = (desired_velo.y - attribMat[index].velo.y) * configs[WEIGHT_SEEK];
+
+	// write it to the boid
+	attribMat[index].resultSeek.x = (desired_velo.x - attribMat[index].velo.x);
+	attribMat[index].resultSeek.y = (desired_velo.y - attribMat[index].velo.y);
+
+	//attribMat[index].accel.x = (desired_velo.x - attribMat[index].velo.x) * configs[WEIGHT_SEEK];
+	//attribMat[index].accel.y = (desired_velo.y - attribMat[index].velo.y) * configs[WEIGHT_SEEK];
 }
 
 __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs) {
@@ -246,8 +261,13 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	desiredVelo = normalize2(desiredVelo);
 	desiredVelo.x *= configs[BOID_MAX_VELOCITY];
 	desiredVelo.y *= configs[BOID_MAX_VELOCITY];
-	attribMat[index].accel.x += (desiredVelo.x - attribMat[index].velo.x) * configs[WEIGHT_FLOCKING];
-	attribMat[index].accel.y += (desiredVelo.y - attribMat[index].velo.y) * configs[WEIGHT_FLOCKING];
+
+	// write it to boid
+	attribMat[index].resultFlocking.x = (desiredVelo.x - attribMat[index].velo.x);
+	attribMat[index].resultFlocking.y = (desiredVelo.y - attribMat[index].velo.y);
+
+	//attribMat[index].accel.x += (desiredVelo.x - attribMat[index].velo.x) * configs[WEIGHT_FLOCKING];
+	//attribMat[index].accel.y += (desiredVelo.y - attribMat[index].velo.y) * configs[WEIGHT_FLOCKING];
 }
 
 __device__ void wanderBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, curandState_t *states, float *configs) {
@@ -265,8 +285,12 @@ __device__ void wanderBehavior(unsigned int index, float2 *posMat, boidAttrib *a
 	displacement.x = cosf(attribMat[index].wanderAngle) * WANDER_RADIUS;
 	displacement.y = sinf(attribMat[index].wanderAngle) * WANDER_RADIUS;
 
-	attribMat[index].accel.x = (circleCenter.x + displacement.x) * configs[WEIGHT_WANDER];
-	attribMat[index].accel.y = (circleCenter.y + displacement.y) * configs[WEIGHT_WANDER];
+	// write it to the boid
+	attribMat[index].resultWander.x = (circleCenter.x + displacement.x);
+	attribMat[index].resultWander.y = (circleCenter.y + displacement.y);
+
+	//attribMat[index].accel.x = (circleCenter.x + displacement.x) * configs[WEIGHT_WANDER];
+	//attribMat[index].accel.y = (circleCenter.y + displacement.y) * configs[WEIGHT_WANDER];
 
 	// move the circle point randomly on the circular path by changing the wanderAngle
 	float wanderAngularAccel = (0.2*double(curand(&states[index])) / double(RAND_MAX) - 0.1);
@@ -395,6 +419,12 @@ void initMatrices() {
 		h_mat_attribs[i].rot = (float)(rand() % 360);
 		h_mat_attribs[i].wanderAngle = (rand() % 100) / 100.f * 2.f * (float)M_PI;
 		h_mat_attribs[i].wanderAngularVelo = (float)(0.1f*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f));
+		h_mat_attribs[i].resultFlocking.x = 0.f;
+		h_mat_attribs[i].resultFlocking.y = 0.f;
+		h_mat_attribs[i].resultSeek.x = 0.f;
+		h_mat_attribs[i].resultSeek.y = 0.f;
+		h_mat_attribs[i].resultWander.x = 0.f;
+		h_mat_attribs[i].resultWander.y = 0.f;
 	}
 
 	// sort host  matrix before uploading to device
@@ -403,7 +433,6 @@ void initMatrices() {
 	// upload matrices data
 	checkCudaErrors(cudaMalloc(&d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS));
 	checkCudaErrors(cudaMalloc(&d_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS));
-	
 }
 
 // sort the pos matrix on host
