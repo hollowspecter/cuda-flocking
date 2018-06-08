@@ -30,8 +30,8 @@ Window::Window(int *argc, char **argv) {
 	initGL(argc, argv);
 
 	// set the Cuda Device
-	std::cout << "Setting Cuda Device" << std::endl;
-	checkCudaErrors(cudaGLSetGLDevice(gpuGetMaxGflopsDeviceId()));
+	//std::cout << "Setting Cuda Device" << std::endl;
+	//checkCudaErrors(cudaGLSetGLDevice(gpuGetMaxGflopsDeviceId())); deprecated
 
 	// init my positions of my boids
 	std::cout << "Init Boids" << std::endl;

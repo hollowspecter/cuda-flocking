@@ -28,7 +28,6 @@ __global__ void init_states_kernel(unsigned int seed, curandState_t *states) {
 		0, /* the offset is how much extra we advance in the sequence for each call, can be 0 */
 		&states[threadIdx.x]);
 }
-
 __global__ void vbo_pass(float2 *pos, float2 *posMat, boidAttrib *attribMat, float *configs) {
 	//unsigned int boidIndex = threadIdx.x;
 	unsigned int boidIndex = threadIdx.x + blockIdx.x * blockDim.x;
@@ -53,7 +52,6 @@ __global__ void vbo_pass(float2 *pos, float2 *posMat, boidAttrib *attribMat, flo
 	pos[pointIndex + 5].x = posMat[boidIndex].x + cosf(DEG_TO_RAD(rot3)) * size;
 	pos[pointIndex + 5].y = posMat[boidIndex].y + sinf(DEG_TO_RAD(rot3)) * size;
 }
-
 __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int i;
@@ -62,7 +60,8 @@ __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 	
 	// even columns
 	i = 2 * index;
-	if (posMat[i].x > posMat[i + 1].x) {
+	if ((posMat[i].x > posMat[i + 1].x) || // eq.1
+		(posMat[i].x >= posMat[i + 1].x - EPSILON && posMat[i].y < posMat[i + 1].y)) { // eq.2
 
 		ftmp = posMat[i];
 		posMat[i] = posMat[i + 1];
@@ -79,7 +78,8 @@ __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 	// odd columns
 	i = 2 * index + 1;
 	if ((i+1) % MAT_SIZE != 0 && // jump the end of one row bc its odd
-		posMat[i].x > posMat[i + 1].x) {
+		(posMat[i].x > posMat[i + 1].x || // eq.1
+		(posMat[i].x >= posMat[i + 1].x - EPSILON && posMat[i].y < posMat[i + 1].y))) { // eq.2
 
 		ftmp = posMat[i];
 		posMat[i] = posMat[i + 1];
@@ -96,7 +96,8 @@ __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 	// even lines
 		// x				 // y              *2x row-length
 	i = (index / MAT_SIZE) + (index%MAT_SIZE) * 2 * MAT_SIZE;
-	if (posMat[i].y < posMat[i + MAT_SIZE].y) {
+	if (posMat[i].y < posMat[i + MAT_SIZE].y || //eq.3
+		(posMat[i].y <= posMat[i + MAT_SIZE].y - EPSILON && posMat[i].x > posMat[i + MAT_SIZE].x)) { // eq.4
 
 		ftmp = posMat[i];
 		posMat[i] = posMat[i + MAT_SIZE];
@@ -113,7 +114,8 @@ __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 	// odd lines
 	i = (index / MAT_SIZE) + (index%MAT_SIZE) * 2 * MAT_SIZE + MAT_SIZE;
 	if (((i + MAT_SIZE) < NUMBER_OF_BOIDS) &&
-		  posMat[i].y < posMat[i + MAT_SIZE].y) {
+		(posMat[i].y < posMat[i + MAT_SIZE].y || // eq.3
+		(posMat[i].y <= posMat[i + MAT_SIZE].y - EPSILON && posMat[i].x > posMat[i + MAT_SIZE].x))) { // eq.4
 		
 		ftmp = posMat[i];
 		posMat[i] = posMat[i + MAT_SIZE];
@@ -124,7 +126,6 @@ __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 		attribMat[i + MAT_SIZE] = btmp;
 	}
 }
-
 __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandState_t *states, float *configs) {
 	//unsigned int index = threadIdx.x;
 	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
@@ -137,7 +138,7 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 	if (configs[ENABLE_SEEK] > 0.f)
 		seekBehaviour(index, posMat, attribMat, configs);
 
-	// weighted addition over all the behaviours
+	// weighted sum over all the behaviours
 	attribMat[index].accel.x =
 		attribMat[index].resultWander.x * configs[WEIGHT_WANDER]
 		+ attribMat[index].resultFlocking.x * configs[WEIGHT_FLOCKING]
@@ -174,7 +175,6 @@ __device__ void seekBehaviour(unsigned int index, float2 *posMat, boidAttrib *at
 	//attribMat[index].accel.x = (desired_velo.x - attribMat[index].velo.x) * configs[WEIGHT_SEEK];
 	//attribMat[index].accel.y = (desired_velo.y - attribMat[index].velo.y) * configs[WEIGHT_SEEK];
 }
-
 __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs) {
 	// calculate the extended moore neighborhood
 	int radius = configs[NEIGHBORHOOD_RADIUS];
@@ -269,7 +269,6 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	//attribMat[index].accel.x += (desiredVelo.x - attribMat[index].velo.x) * configs[WEIGHT_FLOCKING];
 	//attribMat[index].accel.y += (desiredVelo.y - attribMat[index].velo.y) * configs[WEIGHT_FLOCKING];
 }
-
 __device__ void wanderBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, curandState_t *states, float *configs) {
 	// wander behaviour from here: https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-wander--gamedev-1624
 	float2 circleCenter = make_float2(0.0f, 0.0f),
@@ -456,7 +455,9 @@ void sortHostPosMatrix() {
 				for (int x = 0; x < n - 1; ++x) {
 					int index1 = x + MAT_SIZE*y,
 						index2 = (x + 1) + MAT_SIZE*y;
-					if (h_mat_pos[index1].x > h_mat_pos[index2].x) {
+					if (h_mat_pos[index1].x > h_mat_pos[index2].x || // eq. 1
+						(h_mat_pos[index1].x >= h_mat_pos[index2].x - EPSILON && h_mat_pos[index1].y < h_mat_pos[index2].y) // eq.2
+						) {
 
 						float2 temp = h_mat_pos[index1];
 						h_mat_pos[index1] = h_mat_pos[index2];
@@ -464,6 +465,7 @@ void sortHostPosMatrix() {
 
 						swapCount++;
 					}
+
 				}
 
 		// bubble sort columns by pos.y
@@ -472,7 +474,9 @@ void sortHostPosMatrix() {
 				for (int y = 0; y < n - 1; ++y) {
 					int index1 = x + MAT_SIZE*y,
 						index2 = x + MAT_SIZE*y + MAT_SIZE;
-					if (h_mat_pos[index1].y < h_mat_pos[index2].y) {
+					if (h_mat_pos[index1].y < h_mat_pos[index2].y || // eq. 3
+						(h_mat_pos[index1].y <= h_mat_pos[index2].y - EPSILON && h_mat_pos[index1].x > h_mat_pos[index2].x) // eq. 4
+						) {
 
 						float2 temp = h_mat_pos[index1];
 						h_mat_pos[index1] = h_mat_pos[index2];
