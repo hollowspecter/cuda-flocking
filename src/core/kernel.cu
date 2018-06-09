@@ -166,6 +166,8 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 		attribMat[index].resultSeperation.y = 0.f;
 		attribMat[index].resultAlignement.x = 0.f;
 		attribMat[index].resultAlignement.y = 0.f;
+		attribMat[index].resultAvoidance.x = 0.f;
+		attribMat[index].resultAvoidance.y = 0.f;
 	}
 	if (configs[ENABLE_SEEK] > 0.f)
 		seekBehaviour(index, posMat, attribMat, configs);
@@ -175,17 +177,18 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 	}
 
 	// weighted sum
-	//float2 desiredVelo;
 	attribMat[index].accel.x = attribMat[index].resultWander.x * configs[WEIGHT_WANDER]
 		+ attribMat[index].resultCohesion.x * configs[WEIGHT_COHESION]
 		+ attribMat[index].resultAlignement.x * configs[WEIGHT_ALIGNEMENT]
 		+ attribMat[index].resultSeperation.x * configs[WEIGHT_SEPERATION]
 		+ attribMat[index].resultSeek.x * configs[WEIGHT_SEEK];
+		+ attribMat[index].resultAvoidance.x * configs[WEIGHT_AVOIDANCE];
 	attribMat[index].accel.y = attribMat[index].resultWander.y * configs[WEIGHT_WANDER]
 		+ attribMat[index].resultCohesion.y * configs[WEIGHT_COHESION]
 		+ attribMat[index].resultAlignement.y * configs[WEIGHT_ALIGNEMENT]
 		+ attribMat[index].resultSeperation.y * configs[WEIGHT_SEPERATION]
 		+ attribMat[index].resultSeek.y * configs[WEIGHT_SEEK];
+		+ attribMat[index].resultAvoidance.y * configs[WEIGHT_AVOIDANCE];
 
 	///////////////simulation pass
 	applyAcceleration(index, attribMat, configs);
@@ -234,6 +237,7 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	float2 alignment = make_float2(0.f, 0.f);
 	float2 cohesion = make_float2(0.f, 0.f);
 	float2 seperation = make_float2(0.f, 0.f);
+	float2 avoidance = make_float2(0.f, 0.f);
 	int numNeighborsAlignment = 0, numNeighborsCohesion = 0, numNeighborsSeperation = 0;
 
 	for (int x = startX; x<endX; ++x)
@@ -280,6 +284,13 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 				numNeighborsSeperation++;
 				seperation.x += dx;
 				seperation.y += dy;
+			}
+
+			// Calculate avoidance forces
+			if (configs[WEIGHT_AVOIDANCE] > EPSILON) {
+				float2 dEdx = avoidanceForce(posMat[index], posMat[i], attribMat[index].velo, attribMat[i].velo);
+				avoidance.x += dEdx.x;
+				avoidance.y += dEdx.y;
 			}
 		}//endfor
 
@@ -334,12 +345,27 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 		seperation = limit(seperation, configs[BOID_MAX_ACCEL]);
 	}
 
+	// avoidance
+	if (length2(avoidance) <= EPSILON) {
+		avoidance.x = 0.f;
+		avoidance.y = 0.f;
+	}else{
+		avoidance = normalize2(avoidance);
+		avoidance.x *= configs[BOID_MAX_VELOCITY];
+		avoidance.y *= configs[BOID_MAX_VELOCITY];
+		avoidance.x = (avoidance.x - attribMat[index].velo.x);
+		avoidance.y = (avoidance.y - attribMat[index].velo.y);
+		avoidance = limit(avoidance, configs[BOID_MAX_ACCEL]);
+	}
+
 	attribMat[index].resultCohesion.x = cohesion.x;
 	attribMat[index].resultCohesion.y = cohesion.y;
 	attribMat[index].resultAlignement.x = alignment.x;
 	attribMat[index].resultAlignement.y = alignment.y;
 	attribMat[index].resultSeperation.x = seperation.x;
 	attribMat[index].resultSeperation.y = seperation.y;
+	attribMat[index].resultAvoidance.x = avoidance.x;
+	attribMat[index].resultAvoidance.y = avoidance.y;
 }
 __device__ void wanderBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, curandState_t *states, float *configs) {
 	// wander behaviour from here: https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-wander--gamedev-1624
@@ -412,6 +438,25 @@ __device__ void applyAcceleration(unsigned int index, boidAttrib *attribMat, flo
 	// cap velocity
 	attribMat[index].velo = limit(attribMat[index].velo, maxvelo);
 }
+__device__ float2 avoidanceForce(float2 pa, float2 pb, float2 va, float2 vb) {
+	//http://twvideo01.ubm-us.net/o1/vault/gdc2015/presentations/Guy_Stephen_ForceBasedAnticipatory.pdf
+	float2 w = make_float2(pb.x - pa.x, pb.y - pa.y);
+	float2 v = make_float2(va.x - vb.x, va.y - vb.y);
+	float radius = BOID_RADIUS + BOID_RADIUS;
+	float a = dot(v, v);
+	float b = dot(w, v);
+	float c = dot(w, w) - radius*radius;
+	float discr = b*b - a*c;
+	if (discr < EPSILON) return make_float2(0.f, 0.f);
+	discr = sqrt(discr);
+	float t = (b - discr) / a;
+	if (t < 0) return make_float2(0.f, 0.f);
+
+	return make_float2(
+		(v.x - (v.x*b - w.x*a) / (discr)) / (a*t*t)*(2.f / t),
+		(v.y - (v.y*b - w.y*a) / (discr)) / (a*t*t)*(2.f / t)
+	);
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -455,6 +500,9 @@ __device__ float2 limit(float2 v, float max) {
 		result.y *= max;
 	}
 	return result;
+}
+__device__ float dot(float2 v1, float2 v2) {
+	return v1.x * v2.x + v1.y * v2.y;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -642,7 +690,6 @@ void scenarioDefault() {
 		h_mat_attribs[i].color = make_float4(1.f, 0.f, 0.f, 1.f);
 		h_mat_attribs[i].useDefaultColor = true;
 		h_mat_attribs[i].useGoal = false;
-
 	}
 
 	sortHostPosMatrix();

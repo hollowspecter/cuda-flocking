@@ -43,6 +43,7 @@ void Gui::fillConfigs() {
 	configs[DISTANCE_ALIGNEMENT] = 100.f;
 	configs[DISTANCE_COHESION] = 100.f;
 	configs[DISTANCE_SEPERATION] = 50.f;
+	configs[DISTANCE_AVOIDANCE] = 50.f;
 	configs[GOAL_1_x] = 300.f;
 	configs[GOAL_1_y] = 300.f;
 	configs[NEIGHBORHOOD_RADIUS] = 2.0f;
@@ -116,6 +117,9 @@ void Gui::renderImgui()
 		ImGui::Text("Seperation");
 		ImGui::SliderFloat("weight: seperation", &configs[WEIGHT_SEPERATION], 0.0f, 2.0f);
 		ImGui::SliderFloat("distance: seperation", &configs[DISTANCE_SEPERATION], 1.0f, 300.0f);
+		ImGui::Text("Avoidance");
+		ImGui::SliderFloat("weight: avoidance", &configs[WEIGHT_AVOIDANCE], 0.0f, 2.0f);
+		ImGui::SliderFloat("distance: avoidance", &configs[DISTANCE_AVOIDANCE], 1.0f, 300.0f);
 
 		ImGui::Text("Moore Neighborhood Radius");
 		int radius = configs[NEIGHBORHOOD_RADIUS];

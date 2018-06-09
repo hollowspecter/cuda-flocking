@@ -20,6 +20,7 @@
 #define RAD_TO_DEG(a) (a * 180.0 / M_PI) 
 #define EPSILON (0.000001)
 #define CLAMP(a,b,c) { b = ((b) < (a))? (a) : (((b) > (c))? (c): (b));}
+#define BOID_RADIUS 10
 
 // wander
 #define CENTER_OFFSET (150)
@@ -27,7 +28,7 @@
 #define MAX_WANDER_VELO (0.2)
 
 // configuration
-#define NUM_OF_CONFIG_VARS (20)
+#define NUM_OF_CONFIG_VARS (22)
 enum Configuration {
 	WEIGHT_ALIGNEMENT = 0,
 	WEIGHT_COHESION = 1,
@@ -48,5 +49,7 @@ enum Configuration {
 	NEIGHBORHOOD_RADIUS = 16,
 	DEFAULT_COLOR_R = 17,
 	DEFAULT_COLOR_G = 18,
-	DEFAULT_COLOR_B = 19
+	DEFAULT_COLOR_B = 19,
+	WEIGHT_AVOIDANCE = 20,
+	DISTANCE_AVOIDANCE = 21
 };

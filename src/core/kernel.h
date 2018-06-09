@@ -32,6 +32,7 @@ struct boidAttrib {
 	float4 color = make_float4(1.f, 0, 0, 1.f);
 	bool useGoal = false;
 	float2 goal;
+	float2 resultAvoidance;
 };
 
 // host functions
@@ -63,6 +64,7 @@ __device__ void wanderBehavior(unsigned int index, float2 *posMat, boidAttrib *a
 __device__ void applyVelocity(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs);
 __device__ void applyAcceleration(unsigned int index, boidAttrib *attribMat, float *configs);
 __device__ void lookWhereYourGoing(unsigned int index, float2 *posMat, boidAttrib *attribMat);
+__device__ float2 avoidanceForce(float2 pa, float2 pb, float2 va, float2 vb);
 
 // Helper Functions
 __device__ float2 normalize2(float2 p);
@@ -70,3 +72,4 @@ __device__ float sqrLength2(float2 p);
 __device__ float length2(float2 p);
 __device__ int getGlobalIdx_3D_1D();
 __device__ float2 limit(float2 v, float max);
+__device__ float dot(float2 v1, float2 v2);
