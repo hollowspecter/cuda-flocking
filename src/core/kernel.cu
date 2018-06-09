@@ -12,8 +12,8 @@ float *h_configs;
 float2 *h_mat_pos; // the position matrix, basically sorting key
 boidAttrib *h_mat_attribs; // the attribute matrix, that will get sorted as well with the same
 
-const unsigned int threadsPerBlock = THREADS_PER_BLOCK;
-const unsigned int numBlocks = NUM_BLOCKS;
+const unsigned int threadsPerBlock = 1024;
+const dim3 grid = dim3(8,8,1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // CUDA KERNEL FUNCTIONS
@@ -30,7 +30,7 @@ __global__ void init_states_kernel(unsigned int seed, curandState_t *states) {
 }
 __global__ void vbo_pass(float2 *pos, float4 *col, float2 *posMat, boidAttrib *attribMat, float *configs) {
 	//unsigned int boidIndex = threadIdx.x;
-	unsigned int boidIndex = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int boidIndex = getGlobalIdx_3D_1D();
 	unsigned int pointIndex = boidIndex * 6;
 	//float rot1 = -rot[boidIndex] + 90, rot2 = rot1 - 140, rot3 = rot1 + 140;
 	float rot1 = -1 * attribMat[boidIndex].rot + 90, rot2 = rot1 - 140, rot3 = rot1 + 140;
@@ -65,11 +65,11 @@ __global__ void vbo_pass(float2 *pos, float4 *col, float2 *posMat, boidAttrib *a
 	col[pointIndex + 5] = color;
 }
 __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
-	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int index = getGlobalIdx_3D_1D();
 	unsigned int i;
 	float2 ftmp;
 	boidAttrib btmp;
-	float2 left, right, top, bot;
+	float2 left, right;
 	
 	// even columns
 	i = 2 * index;
@@ -145,7 +145,7 @@ __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 }
 __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandState_t *states, float *configs) {
 	//unsigned int index = threadIdx.x;
-	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int index = getGlobalIdx_3D_1D();
 
 	// reset color
 	attribMat[index].useDefaultColor = true;
@@ -153,11 +153,26 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 	///////////////behaviour pass
 	if (configs[ENABLE_WANDER] > 0.f)
 		wanderBehavior(index, posMat, attribMat, states, configs);
+	else {
+		attribMat[index].resultWander.x = 0.f;
+		attribMat[index].resultWander.y = 0.f;
+	}
 	if (configs[ENABLE_FLOCKING] > 0.f)
 		flockingBehavior(index, posMat, attribMat, configs);
+	else {
+		attribMat[index].resultCohesion.x = 0.f;
+		attribMat[index].resultCohesion.y = 0.f;
+		attribMat[index].resultSeperation.x = 0.f;
+		attribMat[index].resultSeperation.y = 0.f;
+		attribMat[index].resultAlignement.x = 0.f;
+		attribMat[index].resultAlignement.y = 0.f;
+	}
 	if (configs[ENABLE_SEEK] > 0.f)
 		seekBehaviour(index, posMat, attribMat, configs);
-
+	else {
+		attribMat[index].resultSeek.x = 0.f;
+		attribMat[index].resultSeek.y = 0.f;
+	}
 	// weighted sum over all the behaviours
 	//attribMat[index].accel.x =
 	//	attribMat[index].resultWander.x * configs[WEIGHT_WANDER]
@@ -212,9 +227,6 @@ __device__ void seekBehaviour(unsigned int index, float2 *posMat, boidAttrib *at
 	// write it to the boid
 	attribMat[index].resultSeek.x = (desired_velo.x - attribMat[index].velo.x);
 	attribMat[index].resultSeek.y = (desired_velo.y - attribMat[index].velo.y);
-
-	//attribMat[index].accel.x = (desired_velo.x - attribMat[index].velo.x) * configs[WEIGHT_SEEK];
-	//attribMat[index].accel.y = (desired_velo.y - attribMat[index].velo.y) * configs[WEIGHT_SEEK];
 }
 __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs) {
 
@@ -233,19 +245,12 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	float2 alignment = make_float2(0.f, 0.f);
 	float2 cohesion = make_float2(0.f, 0.f);
 	float2 seperation = make_float2(0.f, 0.f);
-	int numNeighborsAlignement = 0, numNeighborsCohesion = 0, numNeighborsSeperation = 0;
-
-	//for (int n = 0; n < radius*radius; ++n) {
+	int numNeighborsAlignment = 0, numNeighborsCohesion = 0, numNeighborsSeperation = 0;
 
 	for (int x = startX; x<endX; ++x)
 		for (int y = startY; y < endY; ++y) {
 			// calc index
 			int i = x + y * MAT_SIZE; 
-		/*int i = startX + startY * MAT_SIZE;
-		i %= NUMBER_OF_BOIDS;
-		
-		startX++;
-		startY++;*/
 
 			// skip yourself
 			if (i == index)
@@ -264,7 +269,7 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 			float sqrThreshold = configs[DISTANCE_ALIGNEMENT];
 			sqrThreshold *= sqrThreshold;
 			if (sqrDistance < sqrThreshold) {
-				numNeighborsAlignement++;
+				numNeighborsAlignment++;
 				alignment.x += attribMat[i].velo.x;
 				alignment.y += attribMat[i].velo.y;
 			}
@@ -278,6 +283,11 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 			sqrThreshold = configs[DISTANCE_SEPERATION];
 			sqrThreshold *= sqrThreshold;
 			if (sqrDistance < sqrThreshold) {
+				float2 diff = make_float2(dx, dy);
+				normalize2(diff);
+				float distance = sqrt(sqrDistance);
+				diff.x /= distance;
+				diff.y /= distance;
 				numNeighborsSeperation++;
 				seperation.x += dx;
 				seperation.y += dy;
@@ -287,26 +297,40 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	__syncthreads();
 
 	 // no neighbors found?
-	if (numNeighborsAlignement == 0) {
+
+	// alignement
+	if (numNeighborsAlignment == 0) {
 		alignment.x = 0.f;
 		alignment.y = 0.f;
 	}
+	else {
+		alignment.x /= (float)numNeighborsAlignment;
+		alignment.x /= (float)numNeighborsAlignment;
+	}
+
+	// cohesion
 	if (numNeighborsCohesion == 0) {
 		cohesion.x = 0.f;
 		cohesion.y = 0.f;
 	}
 	else {
-		cohesion.x /= numNeighborsCohesion;
-		cohesion.y /= numNeighborsCohesion;
+		cohesion.x /= (float)numNeighborsCohesion;
+		cohesion.y /= (float)numNeighborsCohesion;
 		cohesion = make_float2(cohesion.x - posMat[index].x, cohesion.y - posMat[index].y);
 	}
-	if (numNeighborsSeperation == 0) {
-		seperation.x = 0.f;
-		seperation.y = 0.f;
+
+	// seperation
+	if (numNeighborsSeperation > 0) {
+		seperation.x /= numNeighborsSeperation;
+		seperation.y /= numNeighborsSeperation;
 	}
-	alignment = normalize2(alignment);
-	cohesion = normalize2(cohesion);
-	seperation = normalize2(seperation);
+	if (length2(seperation) > EPSILON) {
+		seperation = normalize2(seperation);
+		seperation.x *= configs[BOID_MAX_VELOCITY];
+		seperation.y *= configs[BOID_MAX_VELOCITY];
+		seperation.x = (seperation.x - attribMat[index].velo.x);
+		seperation.y = (seperation.y - attribMat[index].velo.y);
+	}
 
 	//float2 desiredVelo;
 	//desiredVelo.x = configs[WEIGHT_ALIGNEMENT] * alignment.x + configs[WEIGHT_COHESION] * cohesion.x + configs[WEIGHT_SEPERATION] * seperation.x;
@@ -391,22 +415,14 @@ __device__ void applyAcceleration(unsigned int index, boidAttrib *attribMat, flo
 	const float maxvelo = configs[BOID_MAX_VELOCITY];
 
 	// cap acceleration
-	if (length2(attribMat[index].accel) > maxaccel) {
-		attribMat[index].velo = normalize2(attribMat[index].velo);
-		attribMat[index].velo.x *= maxaccel;
-		attribMat[index].velo.y *= maxaccel;
-	}
+	attribMat[index].accel = limit(attribMat[index].accel, maxaccel);
 
 	// apply acceleration
 	attribMat[index].velo.x += DELTA_TIME * attribMat[index].accel.x;
 	attribMat[index].velo.y += DELTA_TIME * attribMat[index].accel.y;
 
 	// cap velocity
-	if (length2(attribMat[index].velo) > maxvelo) {
-		attribMat[index].velo = normalize2(attribMat[index].velo);
-		attribMat[index].velo.x *= maxvelo;
-		attribMat[index].velo.y *= maxvelo;
-	}
+	attribMat[index].velo = limit(attribMat[index].velo, maxvelo);
 }
 
 
@@ -435,6 +451,23 @@ __device__ float length2(float2 p) {
 __device__ float sqrLength2(float2 p) {
 	return p.x * p.x + p.y * p.y;
 }
+__device__ int getGlobalIdx_3D_1D()
+{
+	int blockId = blockIdx.x
+		+ blockIdx.y * gridDim.x
+		+ gridDim.x * gridDim.y * blockIdx.z;
+	int threadId = blockId * blockDim.x + threadIdx.x;
+	return threadId;
+}
+__device__ float2 limit(float2 v, float max) {
+	float2 result = make_float2(v.x, v.y);
+	if (length2(v) > max) {
+		result = normalize2(result);
+		result.x *= max;
+		result.y *= max;
+	}
+	return result;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // HOST FUNCTIONS
@@ -442,9 +475,12 @@ __device__ float sqrLength2(float2 p) {
 
 // called once, allocates all the memory on the cuda device
 void init_kernel() {
+	// check if the boid number and the grid size work out
+	assert(NUMBER_OF_BOIDS == grid.x*grid.y*grid.z*threadsPerBlock);
+
 	// allocate space for random states
 	checkCudaErrors(cudaMalloc(&d_states, sizeof(curandState_t) * NUMBER_OF_BOIDS));
-	init_states_kernel << <numBlocks, threadsPerBlock >> >((unsigned int)time(0), d_states);
+	init_states_kernel << <grid, threadsPerBlock >> >((unsigned int)time(0), d_states);
 
 	// allocate and init configuration stuff
 	cudaHostAlloc(&h_configs, sizeof(float) * NUM_OF_CONFIG_VARS, cudaHostAllocDefault);
@@ -580,17 +616,19 @@ void launch_update_kernel() {
 	//update_kernel << <numBlocks, threadsPerBlock >> >(d_pos, d_velo, d_accel, d_rot, d_wanderAngle,
 		//d_wanderAngularVelo, d_states, d_configs);
 
-	simulation_pass << <numBlocks, threadsPerBlock >> > (d_mat_pos, d_mat_attribs, d_states, d_configs);
+	simulation_pass << <grid, threadsPerBlock >> > (d_mat_pos, d_mat_attribs, d_states, d_configs);
 }
 
 // gets called to update the vbo
 void launch_vbo_kernel(float2 *pos, float4 *col)
 {
-	vbo_pass << <numBlocks, threadsPerBlock >> > (pos, col, d_mat_pos, d_mat_attribs, d_configs);
+	vbo_pass << <grid, threadsPerBlock >> > (pos, col, d_mat_pos, d_mat_attribs, d_configs);
 }
 
+// launches kernel to sort the position matrix
 void launch_sorting_kernel() {
-	sorting_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
+	dim3 halfgrid = dim3(grid.x / 2, grid.y, grid.z);
+	sorting_pass << < halfgrid, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
 	//sorting_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
 	//sorting_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);
 	//sorting_pass << < numBlocks / 2, threadsPerBlock >> > (d_mat_pos, d_mat_attribs);

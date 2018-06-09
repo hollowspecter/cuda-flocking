@@ -63,3 +63,5 @@ __device__ void lookWhereYourGoing(unsigned int index, float2 *posMat, boidAttri
 __device__ float2 normalize2(float2 p);
 __device__ float sqrLength2(float2 p);
 __device__ float length2(float2 p);
+__device__ int getGlobalIdx_3D_1D();
+__device__ float2 limit(float2 v, float max);

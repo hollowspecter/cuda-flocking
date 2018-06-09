@@ -39,7 +39,7 @@ void Gui::fillConfigs() {
 	configs[WEIGHT_COHESION] = 0.89f;
 	configs[BOID_MAX_VELOCITY] = MAX_VELOCITY;
 	configs[BOID_MAX_ACCEL] = MAX_ACCELERATION;
-	configs[BOID_SIZE] = 10.f;
+	configs[BOID_SIZE] = 2.f;
 	configs[DISTANCE_ALIGNEMENT] = 100.f;
 	configs[DISTANCE_COHESION] = 100.f;
 	configs[DISTANCE_SEPERATION] = 50.f;
