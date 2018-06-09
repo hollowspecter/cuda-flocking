@@ -13,7 +13,7 @@ float2 *h_mat_pos; // the position matrix, basically sorting key
 boidAttrib *h_mat_attribs; // the attribute matrix, that will get sorted as well with the same
 
 const unsigned int threadsPerBlock = 1024;
-const dim3 grid = dim3(8,8,1);
+const dim3 grid = dim3(4,4,1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // CUDA KERNEL FUNCTIONS
@@ -306,6 +306,12 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	else {
 		alignment.x /= (float)numNeighborsAlignment;
 		alignment.x /= (float)numNeighborsAlignment;
+		alignment = normalize2(alignment);
+		alignment.x *= configs[BOID_MAX_VELOCITY];
+		alignment.y *= configs[BOID_MAX_VELOCITY];
+		alignment.x = (alignment.x - attribMat[index].velo.x);
+		alignment.y = (alignment.y - attribMat[index].velo.y);
+		alignment = limit(alignment, configs[BOID_MAX_ACCEL]);
 	}
 
 	// cohesion
@@ -317,6 +323,12 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 		cohesion.x /= (float)numNeighborsCohesion;
 		cohesion.y /= (float)numNeighborsCohesion;
 		cohesion = make_float2(cohesion.x - posMat[index].x, cohesion.y - posMat[index].y);
+		cohesion = normalize2(cohesion);
+		cohesion.x *= configs[BOID_MAX_VELOCITY];
+		cohesion.y *= configs[BOID_MAX_VELOCITY];
+		cohesion.x = (cohesion.x - attribMat[index].velo.x);
+		cohesion.y = (cohesion.y - attribMat[index].velo.y);
+		cohesion = limit(cohesion, configs[BOID_MAX_ACCEL]);
 	}
 
 	// seperation
@@ -330,18 +342,8 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 		seperation.y *= configs[BOID_MAX_VELOCITY];
 		seperation.x = (seperation.x - attribMat[index].velo.x);
 		seperation.y = (seperation.y - attribMat[index].velo.y);
+		seperation = limit(seperation, configs[BOID_MAX_ACCEL]);
 	}
-
-	//float2 desiredVelo;
-	//desiredVelo.x = configs[WEIGHT_ALIGNEMENT] * alignment.x + configs[WEIGHT_COHESION] * cohesion.x + configs[WEIGHT_SEPERATION] * seperation.x;
-	//desiredVelo.y = configs[WEIGHT_ALIGNEMENT] * alignment.y + configs[WEIGHT_COHESION] * cohesion.y + configs[WEIGHT_SEPERATION] * seperation.y;
-	//desiredVelo = normalize2(desiredVelo);
-	//desiredVelo.x *= configs[BOID_MAX_VELOCITY];
-	//desiredVelo.y *= configs[BOID_MAX_VELOCITY];
-
-	//// write it to boid
-	//attribMat[index].resultFlocking.x = (desiredVelo.x - attribMat[index].velo.x);
-	//attribMat[index].resultFlocking.y = (desiredVelo.y - attribMat[index].velo.y);
 
 	attribMat[index].resultCohesion.x = cohesion.x;
 	attribMat[index].resultCohesion.y = cohesion.y;
@@ -349,9 +351,6 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	attribMat[index].resultAlignement.y = alignment.y;
 	attribMat[index].resultSeperation.x = seperation.x;
 	attribMat[index].resultSeperation.y = seperation.y;
-
-	//attribMat[index].accel.x += (desiredVelo.x - attribMat[index].velo.x) * configs[WEIGHT_FLOCKING];
-	//attribMat[index].accel.y += (desiredVelo.y - attribMat[index].velo.y) * configs[WEIGHT_FLOCKING];
 }
 __device__ void wanderBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, curandState_t *states, float *configs) {
 	// wander behaviour from here: https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-wander--gamedev-1624
@@ -509,8 +508,8 @@ void initMatrices() {
 		h_mat_pos[i].y = (float)(rand() % WINDOW_HEIGHT);
 		h_mat_attribs[i].velo.x = 0.f;
 		h_mat_attribs[i].velo.y = 0.f;
-		h_mat_attribs[i].accel.x = (float)(2.0*float(rand()) / float(RAND_MAX) - 1.0f) * (float)MAX_ACCELERATION;
-		h_mat_attribs[i].accel.y = (float)(2.0*float(rand()) / float(RAND_MAX) - 1.0f) * (float)MAX_ACCELERATION;
+		h_mat_attribs[i].accel.x = (float)(2.0*float(rand()) / float(RAND_MAX) - 1.0f) * 50.f;
+		h_mat_attribs[i].accel.y = (float)(2.0*float(rand()) / float(RAND_MAX) - 1.0f) * 50.f;
 		h_mat_attribs[i].rot = (float)(rand() % 360);
 		h_mat_attribs[i].wanderAngle = (rand() % 100) / 100.f * 2.f * (float)M_PI;
 		h_mat_attribs[i].wanderAngularVelo = (float)(0.1f*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f));

@@ -71,6 +71,8 @@ void Gui::renderImgui()
 
 	if (ImGui::Button("Reset Boids")) gui_reset_boids ^= 1;
 
+	ImGui::Text(framerate);
+
 	ImGui::Checkbox("Enable Flocking", &gui_enable_flocking);
 	configs[ENABLE_FLOCKING] = (gui_enable_flocking) ? 1.0f : -1.0f;
 	ImGui::SameLine();
@@ -98,16 +100,14 @@ void Gui::renderImgui()
 
 	if (ImGui::CollapsingHeader("Flocking Behaviour"))
 	{
-		ImGui::Text("Overall");
-		ImGui::SliderFloat("weight: flocking", &configs[WEIGHT_FLOCKING], 0.0f, 1.0f);
 		ImGui::Text("Alignement");
-		ImGui::SliderFloat("weight: alignement", &configs[WEIGHT_ALIGNEMENT], 0.0f, 1.0f);
+		ImGui::SliderFloat("weight: alignement", &configs[WEIGHT_ALIGNEMENT], 0.0f, 2.0f);
 		ImGui::SliderFloat("distance: alignement", &configs[DISTANCE_ALIGNEMENT], 1.0f, 300.0f);
 		ImGui::Text("Cohesion");
-		ImGui::SliderFloat("weight: cohesion", &configs[WEIGHT_COHESION], 0.0f, 1.0f);
+		ImGui::SliderFloat("weight: cohesion", &configs[WEIGHT_COHESION], 0.0f, 2.0f);
 		ImGui::SliderFloat("distance: cohesion", &configs[DISTANCE_COHESION], 1.0f, 300.0f);
 		ImGui::Text("Seperation");
-		ImGui::SliderFloat("weight: seperation", &configs[WEIGHT_SEPERATION], 0.0f, 1.0f);
+		ImGui::SliderFloat("weight: seperation", &configs[WEIGHT_SEPERATION], 0.0f, 2.0f);
 		ImGui::SliderFloat("distance: seperation", &configs[DISTANCE_SEPERATION], 1.0f, 300.0f);
 
 		ImGui::Text("Moore Neighborhood Radius");
@@ -118,12 +118,12 @@ void Gui::renderImgui()
 
 	if (ImGui::CollapsingHeader("Wander Behaviour"))
 	{
-		ImGui::SliderFloat("weight: wander", &configs[WEIGHT_WANDER], 0.0f, 1.0f);
+		ImGui::SliderFloat("weight: wander", &configs[WEIGHT_WANDER], 0.0f, 2.0f);
 	}
 
 	if (ImGui::CollapsingHeader("Seek Behaviour"))
 	{
-		ImGui::SliderFloat("weight: seek", &configs[WEIGHT_SEEK], 0.0f, 1.0f);
+		ImGui::SliderFloat("weight: seek", &configs[WEIGHT_SEEK], 0.0f, 2.0f);
 	}
 
 	ImGui::End();
@@ -155,7 +155,7 @@ void Gui::guiKeyboard(unsigned char key, int /*x*/, int /*y*/) {
 }
 void Gui::guiMousePos(int x, int y) {
 	ImGuiIO& io = ImGui::GetIO();
-	io.MousePos = ImVec2((float)x, (float)y + 0.f);
+	io.MousePos = ImVec2((float)x, (float)y);
 }
 void Gui::guiMouseWheel(int button, int dir, int x, int y) {
 	ImGuiIO& io = ImGui::GetIO();
@@ -193,4 +193,9 @@ float* Gui::getBoidColor() {
 	float result[3];
 	memcpy(result, color_boid, sizeof(color_boid));
 	return result;
+}
+
+void Gui::setPrimaryGoal(float x, float y) {
+	configs[GOAL_1_x] = x;
+	configs[GOAL_1_y] = y;
 }

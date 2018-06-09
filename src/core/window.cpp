@@ -29,10 +29,6 @@ Window::Window(int *argc, char **argv) {
 	std::cout << "Init GL" << std::endl;
 	initGL(argc, argv);
 
-	// set the Cuda Device
-	//std::cout << "Setting Cuda Device" << std::endl;
-	//checkCudaErrors(cudaGLSetGLDevice(gpuGetMaxGflopsDeviceId())); deprecated
-
 	// init my positions of my boids
 	std::cout << "Init Boids" << std::endl;
 	init_kernel();
@@ -76,6 +72,8 @@ void Window::initGL(int *argc, char **argv) {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1);
+	frames = 0;
+	lastTime = glutGet(GLUT_ELAPSED_TIME);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -84,6 +82,17 @@ void Window::initGL(int *argc, char **argv) {
 
 void Window::renderScene(void)
 {
+	// calculate framerate
+	int currentTime = glutGet(GLUT_ELAPSED_TIME);
+	frames++;
+	if (currentTime - lastTime >= 1000)
+	{
+		sprintf(framerate, "FPS:%4.2f", frames*1000.0 / (currentTime - lastTime));
+		lastTime = currentTime;
+		frames = 0;
+	}
+	strncpy(pGui->framerate, framerate, 100);
+
 	// fetch updates from gui
 	if (pGui->gui_reset_boids) {
 		copy_host_to_device();
@@ -223,6 +232,10 @@ void Window::timerCallback(int value) {
 }
 
 void Window::mouseCallback(int button, int state, int x, int y) {
+	if ((button == GLUT_LEFT_BUTTON) && (state == GLUT_DOWN))
+	{
+		pGui->setPrimaryGoal(x, WINDOW_HEIGHT - y);
+	}
 	pGui->guiMouse(button, state, x, y);
 	glutPostRedisplay();
 }

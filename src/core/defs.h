@@ -5,11 +5,12 @@
 # define M_PI 3.14159265358979323846
 #endif
 #define REFRESH_DELAY (10) //ms
-#define SQR_LOOK_DISTANCE 1000 // for flocking behaviour
 #define MAX_VELOCITY 100.0
 #define MAX_ACCELERATION 50.0
 
-#define MAT_SIZE 256
+// 256 für 65k
+// 128 für 16k
+#define MAT_SIZE 128
 #define NUMBER_OF_BOIDS (MAT_SIZE * MAT_SIZE) //16384
 
 #define DELTA_TIME 0.0166
@@ -26,7 +27,7 @@
 #define MAX_WANDER_VELO (0.2)
 
 // configuration
-#define NUM_OF_CONFIG_VARS (21)
+#define NUM_OF_CONFIG_VARS (20)
 enum Configuration {
 	WEIGHT_ALIGNEMENT = 0,
 	WEIGHT_COHESION = 1,
@@ -42,11 +43,10 @@ enum Configuration {
 	ENABLE_WANDER = 11,
 	GOAL_1_x = 12,
 	GOAL_1_y = 13,
-	WEIGHT_FLOCKING = 14,
-	WEIGHT_SEEK = 15,
-	ENABLE_SEEK = 16,
-	NEIGHBORHOOD_RADIUS = 17,
-	DEFAULT_COLOR_R = 18,
-	DEFAULT_COLOR_G = 19,
-	DEFAULT_COLOR_B = 20
+	WEIGHT_SEEK = 14,
+	ENABLE_SEEK = 15,
+	NEIGHBORHOOD_RADIUS = 16,
+	DEFAULT_COLOR_R = 17,
+	DEFAULT_COLOR_G = 18,
+	DEFAULT_COLOR_B = 19
 };

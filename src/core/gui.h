@@ -12,6 +12,7 @@ public:
 	bool gui_enable_flocking;
 	bool gui_enable_wander;
 	bool gui_enable_seek;
+	char framerate[100];
 
 	Gui();
 	~Gui();
@@ -25,5 +26,6 @@ public:
 	float* getConfiguration();
 	float* getBackgroundColor();
 	float* getBoidColor();
+	void setPrimaryGoal(float x, float y);
 };
 #endif //GUI_H

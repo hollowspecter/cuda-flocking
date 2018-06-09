@@ -11,6 +11,9 @@ private:
 	struct cudaGraphicsResource *cuda_vbo_resource_pos, *cuda_vbo_resource_col;
 	Gui *pGui = 0;
 	float zoom = 1.0f;
+	int lastTime;
+	int frames;
+	char framerate[100];
 
 	void initGL(int *argc, char **argv);
 	void createVBO();

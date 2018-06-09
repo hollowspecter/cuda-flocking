@@ -8,9 +8,6 @@ More behaviours
 * Wander behaviour überarbeiten?
 
 NEXT TODO:
-* seek behaviour -> flee arrival einbauen
-* wander behaviour einbauen!!!!
-* bug ausmerzen
 * obstacle avoidance mit einbauen
 * die anderen zwei regeln einbauen zum sortieren!
 * sorting pass überprüfen
