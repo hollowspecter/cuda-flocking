@@ -30,6 +30,8 @@ struct boidAttrib {
 	float2 resultSeperation;
 	bool useDefaultColor = true;
 	float4 color = make_float4(1.f, 0, 0, 1.f);
+	bool useGoal = false;
+	float2 goal;
 };
 
 // host functions
@@ -42,6 +44,9 @@ void update_configs(float *configs);
 void initMatrices();
 void launch_sorting_kernel();
 void sortHostPosMatrix();
+void scenarioDefault();
+void scenarioFaceToFace();
+void uploadSortedScenario();
 
 // Kernel Functions
 __global__ void init_states_kernel(unsigned int seed, curandState_t *states);
