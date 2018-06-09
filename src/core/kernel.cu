@@ -491,8 +491,13 @@ void initMatrices() {
 	cudaHostAlloc(&h_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS, cudaHostAllocDefault);
 	cudaHostAlloc(&h_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS, cudaHostAllocDefault);
 
-	//scenarioDefault();
-	scenarioFaceToFace();
+	// allocate device matrices
+	checkCudaErrors(cudaMalloc(&d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS));
+	checkCudaErrors(cudaMalloc(&d_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS));
+
+	scenarioDefault();
+	//scenarioFaceToFace();
+	//scenarioCross();
 }
 
 // sort the pos matrix on host
@@ -618,16 +623,6 @@ void cleanupKernel() {
 	cudaFree(d_mat_attribs);
 }
 
-// sorts and uploads the current scenario
-void uploadSortedScenario() {
-	// sort host  matrix before uploading to device
-	sortHostPosMatrix();
-
-	// upload matrices data
-	checkCudaErrors(cudaMalloc(&d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS));
-	checkCudaErrors(cudaMalloc(&d_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS));
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // SCENARIOS
 ////////////////////////////////////////////////////////////////////////////////
@@ -645,9 +640,12 @@ void scenarioDefault() {
 		h_mat_attribs[i].wanderAngle = (rand() % 100) / 100.f * 2.f * (float)M_PI;
 		h_mat_attribs[i].wanderAngularVelo = (float)(0.1f*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f));
 		h_mat_attribs[i].color = make_float4(1.f, 0.f, 0.f, 1.f);
+		h_mat_attribs[i].useDefaultColor = true;
+		h_mat_attribs[i].useGoal = false;
+
 	}
 
-	uploadSortedScenario();
+	sortHostPosMatrix();
 }
 
 void scenarioFaceToFace() {
@@ -703,6 +701,60 @@ void scenarioFaceToFace() {
 		h_mat_attribs[i].wanderAngularVelo = 0.f;
 	}
 
-	uploadSortedScenario();
+	sortHostPosMatrix();
 }
 
+void scenarioCross() {
+	float delta = 4.f;
+	int boidsPerColumn = (WINDOW_HEIGHT / 3) / delta;
+	int numberHalfed = NUMBER_OF_BOIDS / 2;
+	int boidsPerRow = (WINDOW_WIDTH / 3) / delta;
+
+	// team red
+	for (int i = 0; i < numberHalfed; ++i) {
+
+		h_mat_pos[i].x = (i % boidsPerRow) * delta + (WINDOW_WIDTH / 3);
+		h_mat_pos[i].y = ((i / boidsPerRow) * delta + 50.f);
+
+		h_mat_attribs[i].useDefaultColor = false;
+		h_mat_attribs[i].color = make_float4(1.f, 0.f, 0.f, 1.f);
+		h_mat_attribs[i].useGoal = true;
+		h_mat_attribs[i].goal.x = h_mat_pos[i].x;
+		h_mat_attribs[i].goal.y = WINDOW_HEIGHT - h_mat_pos[i].y;
+
+		h_mat_attribs[i].velo.x = 0.f;
+		h_mat_attribs[i].velo.y = 0.f;
+		h_mat_attribs[i].accel.x = 0.f;
+		h_mat_attribs[i].accel.y = 0.f;
+		h_mat_attribs[i].rot = 0;
+		h_mat_attribs[i].wanderAngle = 0.f;
+		h_mat_attribs[i].wanderAngularVelo = 0.f;
+
+		if (i == 0) {
+			h_mat_attribs[i].color = make_float4(1.f, 1.f, 1.f, 1.f);
+		}
+	}
+
+	// team green
+	for (int i = numberHalfed; i < NUMBER_OF_BOIDS; ++i) {
+		int teami = i - numberHalfed;
+		h_mat_pos[i].x = WINDOW_WIDTH - ((teami / boidsPerColumn) * delta + 50.f);
+		h_mat_pos[i].y = (teami % boidsPerColumn) * delta + (WINDOW_HEIGHT / 3);
+
+		h_mat_attribs[i].useDefaultColor = false;
+		h_mat_attribs[i].color = make_float4(0.f, 1.f, 0.f, 1.f);
+		h_mat_attribs[i].useGoal = true;
+		h_mat_attribs[i].goal.x = WINDOW_WIDTH - h_mat_pos[i].x;
+		h_mat_attribs[i].goal.y = h_mat_pos[i].y;
+
+		h_mat_attribs[i].velo.x = 0.f;
+		h_mat_attribs[i].velo.y = 0.f;
+		h_mat_attribs[i].accel.x = 0.f;
+		h_mat_attribs[i].accel.y = 0.f;
+		h_mat_attribs[i].rot = 0;
+		h_mat_attribs[i].wanderAngle = 0.f;
+		h_mat_attribs[i].wanderAngularVelo = 0.f;
+	}
+
+	sortHostPosMatrix();
+}

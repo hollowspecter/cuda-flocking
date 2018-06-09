@@ -82,23 +82,8 @@ void Window::initGL(int *argc, char **argv) {
 
 void Window::renderScene(void)
 {
-	// calculate framerate
-	int currentTime = glutGet(GLUT_ELAPSED_TIME);
-	frames++;
-	if (currentTime - lastTime >= 1000)
-	{
-		sprintf(framerate, "FPS:%4.2f", frames*1000.0 / (currentTime - lastTime));
-		lastTime = currentTime;
-		frames = 0;
-	}
-	strncpy(pGui->framerate, framerate, 100);
-
-	// fetch updates from gui
-	if (pGui->gui_reset_boids) {
-		copy_host_to_device();
-		pGui->gui_reset_boids = false;
-	}
-	update_configs(pGui->getConfiguration());
+	// deal with gui
+	gui();
 
 	// run cuda to modify vbo
 	runCuda();
@@ -133,6 +118,45 @@ void Window::renderScene(void)
 	// swap buffers
 	glutSwapBuffers();
 	glutPostRedisplay();
+}
+
+void Window::gui() {
+	// calculate framerate
+	int currentTime = glutGet(GLUT_ELAPSED_TIME);
+	frames++;
+	if (currentTime - lastTime >= 1000)
+	{
+		sprintf(framerate, "FPS:%4.2f", frames*1000.0 / (currentTime - lastTime));
+		lastTime = currentTime;
+		frames = 0;
+	}
+	strncpy(pGui->framerate, framerate, 100);
+
+	// fetch updates from gui
+	update_configs(pGui->getConfiguration());
+
+	// switch scenarios
+	if (pGui->gui_scenario_faceToFace) {
+		scenarioFaceToFace();
+		copy_host_to_device();
+		pGui->gui_scenario_faceToFace = false;
+	}
+	if (pGui->gui_scenario_cross) {
+		scenarioCross();
+		copy_host_to_device();
+		pGui->gui_scenario_cross = false;
+	}
+	if (pGui->gui_scenario_default) {
+		scenarioDefault();
+		copy_host_to_device();
+		pGui->gui_scenario_default = false;
+	}
+
+	// reset
+	if (pGui->gui_reset_boids) {
+		copy_host_to_device();
+		pGui->gui_reset_boids = false;
+	}
 }
 
 void Window::closeCallback() {

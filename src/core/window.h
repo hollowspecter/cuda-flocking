@@ -27,6 +27,7 @@ public:
 	~Window();
 
 	void renderScene(void);
+	void gui();
 	void closeCallback();
 	void timerCallback(int value);
 	void mouseCallback(int button, int state, int x, int y);

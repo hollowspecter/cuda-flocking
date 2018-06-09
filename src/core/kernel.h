@@ -46,7 +46,7 @@ void launch_sorting_kernel();
 void sortHostPosMatrix();
 void scenarioDefault();
 void scenarioFaceToFace();
-void uploadSortedScenario();
+void scenarioCross();
 
 // Kernel Functions
 __global__ void init_states_kernel(unsigned int seed, curandState_t *states);

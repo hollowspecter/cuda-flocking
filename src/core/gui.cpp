@@ -82,6 +82,13 @@ void Gui::renderImgui()
 	ImGui::Checkbox("Enable Seek", &gui_enable_seek);
 	configs[ENABLE_SEEK] = (gui_enable_seek) ? 1.0f : -1.0f;
 
+	if (ImGui::CollapsingHeader("Scenarios"))
+	{
+		if (ImGui::Button("Default")) gui_scenario_default ^= 1;
+		if (ImGui::Button("Face to Face")) gui_scenario_faceToFace ^= 1;
+		if (ImGui::Button("Cross")) gui_scenario_cross ^= 1;
+	}
+
 	if (ImGui::CollapsingHeader("Environment Attributes"))
 	{
 		ImGui::ColorEdit3("background color", color_bg);

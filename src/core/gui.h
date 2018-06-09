@@ -12,6 +12,9 @@ public:
 	bool gui_enable_flocking;
 	bool gui_enable_wander;
 	bool gui_enable_seek;
+	bool gui_scenario_default = false;
+	bool gui_scenario_faceToFace = false;
+	bool gui_scenario_cross = false;
 	char framerate[100];
 
 	Gui();
