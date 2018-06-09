@@ -173,36 +173,19 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 		attribMat[index].resultSeek.x = 0.f;
 		attribMat[index].resultSeek.y = 0.f;
 	}
-	// weighted sum over all the behaviours
-	//attribMat[index].accel.x =
-	//	attribMat[index].resultWander.x * configs[WEIGHT_WANDER]
-	//	+ attribMat[index].resultFlocking.x * configs[WEIGHT_FLOCKING]
-	//	+ attribMat[index].resultSeek.x * configs[WEIGHT_SEEK];
-	//attribMat[index].accel.y =
-	//	attribMat[index].resultWander.y * configs[WEIGHT_WANDER]
-	//	+ attribMat[index].resultFlocking.y * configs[WEIGHT_FLOCKING]
-	//	+ attribMat[index].resultSeek.y * configs[WEIGHT_SEEK];
 
-	// try again weighted sum
-	float2 desiredVelo;
-	desiredVelo.x = attribMat[index].resultWander.x * configs[WEIGHT_WANDER]
+	// weighted sum
+	//float2 desiredVelo;
+	attribMat[index].accel.x = attribMat[index].resultWander.x * configs[WEIGHT_WANDER]
 		+ attribMat[index].resultCohesion.x * configs[WEIGHT_COHESION]
 		+ attribMat[index].resultAlignement.x * configs[WEIGHT_ALIGNEMENT]
 		+ attribMat[index].resultSeperation.x * configs[WEIGHT_SEPERATION]
 		+ attribMat[index].resultSeek.x * configs[WEIGHT_SEEK];
-	desiredVelo.y = attribMat[index].resultWander.y * configs[WEIGHT_WANDER]
+	attribMat[index].accel.y = attribMat[index].resultWander.y * configs[WEIGHT_WANDER]
 		+ attribMat[index].resultCohesion.y * configs[WEIGHT_COHESION]
 		+ attribMat[index].resultAlignement.y * configs[WEIGHT_ALIGNEMENT]
 		+ attribMat[index].resultSeperation.y * configs[WEIGHT_SEPERATION]
 		+ attribMat[index].resultSeek.y * configs[WEIGHT_SEEK];
-	desiredVelo = normalize2(desiredVelo);
-	desiredVelo.x *= configs[BOID_MAX_VELOCITY];
-	desiredVelo.y *= configs[BOID_MAX_VELOCITY];
-
-	// write acceleration
-	attribMat[index].accel.x += (desiredVelo.x - attribMat[index].velo.x);
-	attribMat[index].accel.y += (desiredVelo.y - attribMat[index].velo.y);
-
 
 	///////////////simulation pass
 	applyAcceleration(index, attribMat, configs);
