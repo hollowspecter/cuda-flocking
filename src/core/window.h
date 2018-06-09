@@ -7,8 +7,8 @@ class Gui;
 
 class Window {
 private:
-	GLuint vbo;
-	struct cudaGraphicsResource *cuda_vbo_resource;
+	GLuint vboPos, vboCol;
+	struct cudaGraphicsResource *cuda_vbo_resource_pos, *cuda_vbo_resource_col;
 	Gui *pGui = 0;
 	float zoom = 1.0f;
 

@@ -22,9 +22,14 @@ struct boidAttrib {
 	float rot;
 	float wanderAngle;
 	float wanderAngularVelo;
-	float2 resultFlocking;
+	float2 resultFlocking;//todo rausrefactorn
 	float2 resultWander;
 	float2 resultSeek;
+	float2 resultCohesion;
+	float2 resultAlignement;
+	float2 resultSeperation;
+	bool useDefaultColor = true;
+	uchar4 color = make_uchar4(255, 0, 0, 255);
 };
 
 // host functions

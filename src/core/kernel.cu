@@ -130,6 +130,9 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 	//unsigned int index = threadIdx.x;
 	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
 
+	// reset color
+	attribMat[index].useDefaultColor = index != 100;
+
 	///////////////behaviour pass
 	if (configs[ENABLE_WANDER] > 0.f)
 		wanderBehavior(index, posMat, attribMat, states, configs);
@@ -139,14 +142,35 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 		seekBehaviour(index, posMat, attribMat, configs);
 
 	// weighted sum over all the behaviours
-	attribMat[index].accel.x =
-		attribMat[index].resultWander.x * configs[WEIGHT_WANDER]
-		+ attribMat[index].resultFlocking.x * configs[WEIGHT_FLOCKING]
+	//attribMat[index].accel.x =
+	//	attribMat[index].resultWander.x * configs[WEIGHT_WANDER]
+	//	+ attribMat[index].resultFlocking.x * configs[WEIGHT_FLOCKING]
+	//	+ attribMat[index].resultSeek.x * configs[WEIGHT_SEEK];
+	//attribMat[index].accel.y =
+	//	attribMat[index].resultWander.y * configs[WEIGHT_WANDER]
+	//	+ attribMat[index].resultFlocking.y * configs[WEIGHT_FLOCKING]
+	//	+ attribMat[index].resultSeek.y * configs[WEIGHT_SEEK];
+
+	// try again weighted sum
+	float2 desiredVelo;
+	desiredVelo.x = attribMat[index].resultWander.x * configs[WEIGHT_WANDER]
+		+ attribMat[index].resultCohesion.x * configs[WEIGHT_COHESION]
+		+ attribMat[index].resultAlignement.x * configs[WEIGHT_ALIGNEMENT]
+		+ attribMat[index].resultSeperation.x * configs[WEIGHT_SEPERATION]
 		+ attribMat[index].resultSeek.x * configs[WEIGHT_SEEK];
-	attribMat[index].accel.y =
-		attribMat[index].resultWander.y * configs[WEIGHT_WANDER]
-		+ attribMat[index].resultFlocking.y * configs[WEIGHT_FLOCKING]
+	desiredVelo.y = attribMat[index].resultWander.y * configs[WEIGHT_WANDER]
+		+ attribMat[index].resultCohesion.y * configs[WEIGHT_COHESION]
+		+ attribMat[index].resultAlignement.y * configs[WEIGHT_ALIGNEMENT]
+		+ attribMat[index].resultSeperation.y * configs[WEIGHT_SEPERATION]
 		+ attribMat[index].resultSeek.y * configs[WEIGHT_SEEK];
+	desiredVelo = normalize2(desiredVelo);
+	desiredVelo.x *= configs[BOID_MAX_VELOCITY];
+	desiredVelo.y *= configs[BOID_MAX_VELOCITY];
+
+	// write acceleration
+	attribMat[index].accel.x += (desiredVelo.x - attribMat[index].velo.x);
+	attribMat[index].accel.y += (desiredVelo.y - attribMat[index].velo.y);
+
 
 	///////////////simulation pass
 	applyAcceleration(index, attribMat, configs);
@@ -255,16 +279,23 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	cohesion = normalize2(cohesion);
 	seperation = normalize2(seperation);
 
-	float2 desiredVelo;
-	desiredVelo.x = configs[WEIGHT_ALIGNEMENT] * alignment.x + configs[WEIGHT_COHESION] * cohesion.x + configs[WEIGHT_SEPERATION] * seperation.x;
-	desiredVelo.y = configs[WEIGHT_ALIGNEMENT] * alignment.y + configs[WEIGHT_COHESION] * cohesion.y + configs[WEIGHT_SEPERATION] * seperation.y;
-	desiredVelo = normalize2(desiredVelo);
-	desiredVelo.x *= configs[BOID_MAX_VELOCITY];
-	desiredVelo.y *= configs[BOID_MAX_VELOCITY];
+	//float2 desiredVelo;
+	//desiredVelo.x = configs[WEIGHT_ALIGNEMENT] * alignment.x + configs[WEIGHT_COHESION] * cohesion.x + configs[WEIGHT_SEPERATION] * seperation.x;
+	//desiredVelo.y = configs[WEIGHT_ALIGNEMENT] * alignment.y + configs[WEIGHT_COHESION] * cohesion.y + configs[WEIGHT_SEPERATION] * seperation.y;
+	//desiredVelo = normalize2(desiredVelo);
+	//desiredVelo.x *= configs[BOID_MAX_VELOCITY];
+	//desiredVelo.y *= configs[BOID_MAX_VELOCITY];
 
-	// write it to boid
-	attribMat[index].resultFlocking.x = (desiredVelo.x - attribMat[index].velo.x);
-	attribMat[index].resultFlocking.y = (desiredVelo.y - attribMat[index].velo.y);
+	//// write it to boid
+	//attribMat[index].resultFlocking.x = (desiredVelo.x - attribMat[index].velo.x);
+	//attribMat[index].resultFlocking.y = (desiredVelo.y - attribMat[index].velo.y);
+
+	attribMat[index].resultCohesion.x = cohesion.x;
+	attribMat[index].resultCohesion.y = cohesion.y;
+	attribMat[index].resultAlignement.x = alignment.x;
+	attribMat[index].resultAlignement.y = alignment.y;
+	attribMat[index].resultSeperation.x = seperation.x;
+	attribMat[index].resultSeperation.y = seperation.y;
 
 	//attribMat[index].accel.x += (desiredVelo.x - attribMat[index].velo.x) * configs[WEIGHT_FLOCKING];
 	//attribMat[index].accel.y += (desiredVelo.y - attribMat[index].velo.y) * configs[WEIGHT_FLOCKING];
