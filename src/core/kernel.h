@@ -29,13 +29,13 @@ struct boidAttrib {
 	float2 resultAlignement;
 	float2 resultSeperation;
 	bool useDefaultColor = true;
-	uchar4 color = make_uchar4(255, 0, 0, 255);
+	float4 color = make_float4(1.f, 0, 0, 1.f);
 };
 
 // host functions
 void init_kernel();
 void launch_update_kernel();
-void launch_vbo_kernel(float2 *pos);
+void launch_vbo_kernel(float2 *pos, float4 *col);
 void cleanupKernel();
 void copy_host_to_device();
 void update_configs(float *configs);
@@ -45,7 +45,7 @@ void sortHostPosMatrix();
 
 // Kernel Functions
 __global__ void init_states_kernel(unsigned int seed, curandState_t *states);
-__global__ void vbo_pass(float2 *pos, float2 *posMat, boidAttrib *attribMat, float *configs);
+__global__ void vbo_pass(float2 *pos, float4 *col, float2 *posMat, boidAttrib *attribMat, float *configs);
 __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat);
 __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandState_t *states, float *configs);
 

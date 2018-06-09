@@ -104,11 +104,14 @@ void Window::renderScene(void)
 	glOrtho(0, WINDOW_WIDTH * zoom, 0, WINDOW_HEIGHT * zoom, -1, 1);
 
 	// bind vbo
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vboPos);
 	glVertexPointer(2, GL_FLOAT, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, vboCol);
+	glColorPointer(4, GL_FLOAT, 0, 0);
 
 	// draw
 	glEnableClientState(GL_VERTEX_ARRAY); // enables vertex array
+	glEnableClientState(GL_COLOR_ARRAY); // enables vertex array
 	color = pGui->getBoidColor();
 	glColor3f(color[0], color[1], color[2]);
 	glDrawArrays(GL_TRIANGLES, 0, 6 * NUMBER_OF_BOIDS);
@@ -133,24 +136,38 @@ void Window::closeCallback() {
 }
 
 void Window::createVBO() {
-	assert(&vbo);
+	assert(&vboPos);
 	std::cout << "\tCreating Buffer Object" << std::endl;
 
-	// create buffer object
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	/* Position VBO */
 
+	// create buffer object
+	glGenBuffers(1, &vboPos);
+	glBindBuffer(GL_ARRAY_BUFFER, vboPos);
 	// uploading nothing but creating lots of vertices in vertex buffer
-	std::cout << "\tUploading Data" << std::endl;
+	std::cout << "\tUploading Data Position" << std::endl;
 	unsigned int size = 6 * NUMBER_OF_BOIDS * sizeof(float2);
 	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
-
-	// unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// register this buffer object with CUDA https://www.cs.cmu.edu/afs/cs/academic/class/15668-s11/www/cuda-doc/html/group__CUDART__TYPES_g2c3c3a69caaf333d29d0b38b75de5ffd.html#gg2c3c3a69caaf333d29d0b38b75de5ffd3d4fa7699e964ffc201daac20d2ecd6b
-	std::cout << "\tRegister Buffer Object to CUDA" << std::endl;
-	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource, vbo, cudaGraphicsMapFlagsNone));
+	std::cout << "\tRegister Position Buffer Object to CUDA" << std::endl;
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource_pos, vboPos, cudaGraphicsMapFlagsNone));
+
+	SDK_CHECK_ERROR_GL();
+
+	/* Color VBO */
+	glGenBuffers(1, &vboCol);
+	glBindBuffer(GL_ARRAY_BUFFER, vboCol);
+	// uploading nothing but creating lots of vertices in vertex buffer
+	std::cout << "\tUploading Color Data" << std::endl;
+	size = 6 * NUMBER_OF_BOIDS * sizeof(float4);
+	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// register this buffer object with CUDA https://www.cs.cmu.edu/afs/cs/academic/class/15668-s11/www/cuda-doc/html/group__CUDART__TYPES_g2c3c3a69caaf333d29d0b38b75de5ffd.html#gg2c3c3a69caaf333d29d0b38b75de5ffd3d4fa7699e964ffc201daac20d2ecd6b
+	std::cout << "\tRegister Color Buffer Object to CUDA" << std::endl;
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource_col, vboCol, cudaGraphicsMapFlagsNone));
 
 	SDK_CHECK_ERROR_GL();
 }
@@ -160,13 +177,17 @@ void Window::deleteVBO()
 	std::cout << "\tDeleting VBO" << std::endl;
 
 	// unregister this buffer object with CUDA
-	checkCudaErrors(cudaGraphicsUnregisterResource(cuda_vbo_resource));
+	checkCudaErrors(cudaGraphicsUnregisterResource(cuda_vbo_resource_pos));
+	checkCudaErrors(cudaGraphicsUnregisterResource(cuda_vbo_resource_col));
 
 	// delete vbo
-	glBindBuffer(1, vbo);
-	glDeleteBuffers(1, &vbo);
+	glBindBuffer(1, vboPos);
+	glDeleteBuffers(1, &vboPos);
+	glBindBuffer(1, vboCol);
+	glDeleteBuffers(1, &vboCol);
 
-	vbo = 0;
+	vboPos = 0;
+	vboCol = 0;
 }
 
 void Window::runCuda() {
@@ -177,16 +198,20 @@ void Window::runCuda() {
 	launch_update_kernel();
 
 	// map OpenGL buffer object for writing from CUDA
-	float2 *dptr; // pointer on the positions
-	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_vbo_resource, 0));
-	size_t num_bytes;
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dptr, &num_bytes, cuda_vbo_resource));
+	float2 *dptrPos;
+	float4 *dptrCol; // pointer on the positions
+	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_vbo_resource_pos, 0));
+	checkCudaErrors(cudaGraphicsMapResources(1, &cuda_vbo_resource_col, 0));
+	size_t num_bytes_pos, num_bytes_col;
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dptrPos, &num_bytes_pos, cuda_vbo_resource_pos));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void **)&dptrCol, &num_bytes_col, cuda_vbo_resource_col));
 
 	// launch cuda kernel to update VBO
-	launch_vbo_kernel(dptr);
+	launch_vbo_kernel(dptrPos, dptrCol);
 
 	// unmap buffer object (waits for all previous GPU activity to complete)
-	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_vbo_resource, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_vbo_resource_pos, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_vbo_resource_col, 0));
 }
 
 void Window::timerCallback(int value) {

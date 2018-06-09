@@ -28,7 +28,7 @@ __global__ void init_states_kernel(unsigned int seed, curandState_t *states) {
 		0, /* the offset is how much extra we advance in the sequence for each call, can be 0 */
 		&states[threadIdx.x]);
 }
-__global__ void vbo_pass(float2 *pos, float2 *posMat, boidAttrib *attribMat, float *configs) {
+__global__ void vbo_pass(float2 *pos, float4 *col, float2 *posMat, boidAttrib *attribMat, float *configs) {
 	//unsigned int boidIndex = threadIdx.x;
 	unsigned int boidIndex = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int pointIndex = boidIndex * 6;
@@ -51,17 +51,32 @@ __global__ void vbo_pass(float2 *pos, float2 *posMat, boidAttrib *attribMat, flo
 	pos[pointIndex + 4].y = posMat[boidIndex].y + sinf(DEG_TO_RAD(rot1)) * size;
 	pos[pointIndex + 5].x = posMat[boidIndex].x + cosf(DEG_TO_RAD(rot3)) * size;
 	pos[pointIndex + 5].y = posMat[boidIndex].y + sinf(DEG_TO_RAD(rot3)) * size;
+
+	// Color first triangle
+	float4 color = (attribMat[boidIndex].useDefaultColor)
+		? make_float4(configs[DEFAULT_COLOR_R], configs[DEFAULT_COLOR_G], configs[DEFAULT_COLOR_B], 1.f)
+		: attribMat[boidIndex].color;
+
+	col[pointIndex] = color;
+	col[pointIndex + 1] = color;
+	col[pointIndex + 2] = color;
+	col[pointIndex + 3] = color;
+	col[pointIndex + 4] = color;
+	col[pointIndex + 5] = color;
 }
 __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
 	unsigned int i;
 	float2 ftmp;
 	boidAttrib btmp;
+	float2 left, right, top, bot;
 	
 	// even columns
 	i = 2 * index;
-	if ((posMat[i].x > posMat[i + 1].x) || // eq.1
-		(posMat[i].x >= posMat[i + 1].x - EPSILON && posMat[i].y < posMat[i + 1].y)) { // eq.2
+	left = posMat[i];
+	right = posMat[i + 1];
+	if ((left.x >  right.x) || // eq.1
+		(left.x >= right.x - EPSILON && left.y < right.y)) { // eq.2
 
 		ftmp = posMat[i];
 		posMat[i] = posMat[i + 1];
@@ -77,9 +92,11 @@ __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 
 	// odd columns
 	i = 2 * index + 1;
+	left = posMat[i];
+	right = posMat[i + 1];
 	if ((i+1) % MAT_SIZE != 0 && // jump the end of one row bc its odd
-		(posMat[i].x > posMat[i + 1].x || // eq.1
-		(posMat[i].x >= posMat[i + 1].x - EPSILON && posMat[i].y < posMat[i + 1].y))) { // eq.2
+		(left.x >  right.x || // eq.1
+		(left.x >= right.x - EPSILON && left.y < right.y))) { // eq.2
 
 		ftmp = posMat[i];
 		posMat[i] = posMat[i + 1];
@@ -95,7 +112,7 @@ __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 
 	// even lines
 		// x				 // y              *2x row-length
-	i = (index / MAT_SIZE) + (index%MAT_SIZE) * 2 * MAT_SIZE;
+	i = (index % MAT_SIZE) + (index/MAT_SIZE) * 2 * MAT_SIZE;
 	if (posMat[i].y < posMat[i + MAT_SIZE].y || //eq.3
 		(posMat[i].y <= posMat[i + MAT_SIZE].y - EPSILON && posMat[i].x > posMat[i + MAT_SIZE].x)) { // eq.4
 
@@ -112,7 +129,7 @@ __global__ void sorting_pass(float2 *posMat, boidAttrib *attribMat) {
 	
 
 	// odd lines
-	i = (index / MAT_SIZE) + (index%MAT_SIZE) * 2 * MAT_SIZE + MAT_SIZE;
+	i = (index % MAT_SIZE) + (index/MAT_SIZE) * 2 * MAT_SIZE + MAT_SIZE;
 	if (((i + MAT_SIZE) < NUMBER_OF_BOIDS) &&
 		(posMat[i].y < posMat[i + MAT_SIZE].y || // eq.3
 		(posMat[i].y <= posMat[i + MAT_SIZE].y - EPSILON && posMat[i].x > posMat[i + MAT_SIZE].x))) { // eq.4
@@ -131,7 +148,7 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 	unsigned int index = threadIdx.x + blockIdx.x * blockDim.x;
 
 	// reset color
-	attribMat[index].useDefaultColor = index != 100;
+	attribMat[index].useDefaultColor = true;
 
 	///////////////behaviour pass
 	if (configs[ENABLE_WANDER] > 0.f)
@@ -200,10 +217,11 @@ __device__ void seekBehaviour(unsigned int index, float2 *posMat, boidAttrib *at
 	//attribMat[index].accel.y = (desired_velo.y - attribMat[index].velo.y) * configs[WEIGHT_SEEK];
 }
 __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib *attribMat, float *configs) {
+
 	// calculate the extended moore neighborhood
 	int radius = configs[NEIGHBORHOOD_RADIUS];
-	int startX = (index / MAT_SIZE) - radius;
-	int startY = (index % MAT_SIZE) - radius;
+	int startX = (index % MAT_SIZE) - radius;
+	int startY = (index / MAT_SIZE) - radius;
 	int endX = startX + 2 * radius;
 	int endY = startY + 2 * radius;
 	if (startX < 0) startX = 0;
@@ -217,14 +235,25 @@ __device__ void flockingBehavior(unsigned int index, float2 *posMat, boidAttrib 
 	float2 seperation = make_float2(0.f, 0.f);
 	int numNeighborsAlignement = 0, numNeighborsCohesion = 0, numNeighborsSeperation = 0;
 
-	// for (int i=0; i<NUMBER_OF_BOIDS; ++i) {
+	//for (int n = 0; n < radius*radius; ++n) {
+
 	for (int x = startX; x<endX; ++x)
 		for (int y = startY; y < endY; ++y) {
 			// calc index
-			int i = x + y*MAT_SIZE;
+			int i = x + y * MAT_SIZE; 
+		/*int i = startX + startY * MAT_SIZE;
+		i %= NUMBER_OF_BOIDS;
+		
+		startX++;
+		startY++;*/
+
 			// skip yourself
 			if (i == index)
 				continue;
+			
+			// debug color
+			if (index == 100)
+				attribMat[i].useDefaultColor = false;
 
 			// calculate squareDistance
 			float dx = posMat[index].x - posMat[i].x;
@@ -455,6 +484,7 @@ void initMatrices() {
 		h_mat_attribs[i].resultSeek.y = 0.f;
 		h_mat_attribs[i].resultWander.x = 0.f;
 		h_mat_attribs[i].resultWander.y = 0.f;
+		h_mat_attribs[i].color = make_float4(1.f, 0.f, 0.f, 1.f);
 	}
 
 	// sort host  matrix before uploading to device
@@ -554,12 +584,9 @@ void launch_update_kernel() {
 }
 
 // gets called to update the vbo
-void launch_vbo_kernel(float2 *pos)
+void launch_vbo_kernel(float2 *pos, float4 *col)
 {
-	//simple_vbo_kernel<<<1,1024>>>(pos, goal, weights);
-	//copy_pos_kernel << <numBlocks, threadsPerBlock >> >(pos, d_pos, d_rot, d_configs);
-	//copy_pos_kernel << <numBlocks, threadsPerBlock >> >(pos, d_mat_pos, d_rot, d_configs);
-	vbo_pass << <numBlocks, threadsPerBlock >> > (pos, d_mat_pos, d_mat_attribs, d_configs);
+	vbo_pass << <numBlocks, threadsPerBlock >> > (pos, col, d_mat_pos, d_mat_attribs, d_configs);
 }
 
 void launch_sorting_kernel() {

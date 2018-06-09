@@ -54,6 +54,9 @@ void Gui::fillConfigs() {
 	color_boid[0] = 180.f / 255.f;
 	color_boid[1] = 128.f / 255.f;
 	color_boid[2] = 213.f / 255.f;
+	configs[DEFAULT_COLOR_R] = 180.f / 255.f;
+	configs[DEFAULT_COLOR_G] = 128.f / 255.f;
+	configs[DEFAULT_COLOR_B] = 213.f / 255.f;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,6 +89,9 @@ void Gui::renderImgui()
 	{
 		ImGui::SliderFloat("size", &configs[BOID_SIZE], 1.0f, 50.f);
 		ImGui::ColorEdit3("background boid", color_boid);
+		configs[DEFAULT_COLOR_R] = color_boid[0];
+		configs[DEFAULT_COLOR_G] = color_boid[1];
+		configs[DEFAULT_COLOR_B] = color_boid[2];
 		ImGui::SliderFloat("max velocity", &configs[BOID_MAX_VELOCITY], 0.0f, (float)MAX_VELOCITY * 2.f);
 		ImGui::SliderFloat("max acceleration", &configs[BOID_MAX_ACCEL], 0.0f, (float)MAX_ACCELERATION * 2.f);
 	}
