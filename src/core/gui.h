@@ -15,6 +15,7 @@ public:
 	bool gui_scenario_default = false;
 	bool gui_scenario_faceToFace = false;
 	bool gui_scenario_cross = false;
+	bool gui_random_color = true;
 	char framerate[100];
 
 	Gui();

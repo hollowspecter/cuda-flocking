@@ -181,13 +181,13 @@ __global__ void simulation_pass(float2 *posMat, boidAttrib *attribMat, curandSta
 		+ attribMat[index].resultCohesion.x * configs[WEIGHT_COHESION]
 		+ attribMat[index].resultAlignement.x * configs[WEIGHT_ALIGNEMENT]
 		+ attribMat[index].resultSeperation.x * configs[WEIGHT_SEPERATION]
-		+ attribMat[index].resultSeek.x * configs[WEIGHT_SEEK];
+		+ attribMat[index].resultSeek.x * configs[WEIGHT_SEEK]
 		+ attribMat[index].resultAvoidance.x * configs[WEIGHT_AVOIDANCE];
 	attribMat[index].accel.y = attribMat[index].resultWander.y * configs[WEIGHT_WANDER]
 		+ attribMat[index].resultCohesion.y * configs[WEIGHT_COHESION]
 		+ attribMat[index].resultAlignement.y * configs[WEIGHT_ALIGNEMENT]
 		+ attribMat[index].resultSeperation.y * configs[WEIGHT_SEPERATION]
-		+ attribMat[index].resultSeek.y * configs[WEIGHT_SEEK];
+		+ attribMat[index].resultSeek.y * configs[WEIGHT_SEEK]
 		+ attribMat[index].resultAvoidance.y * configs[WEIGHT_AVOIDANCE];
 
 	///////////////simulation pass
@@ -394,6 +394,11 @@ __device__ void wanderBehavior(unsigned int index, float2 *posMat, boidAttrib *a
 	attribMat[index].wanderAngularVelo += 0.5f * wanderAngularAccel;
 	CLAMP(-MAX_WANDER_VELO, attribMat[index].wanderAngularVelo, MAX_WANDER_VELO);
 	attribMat[index].wanderAngle += 0.5f * attribMat[index].wanderAngularVelo;
+
+	float r = float(curand(&states[index])) / float(RAND_MAX);
+	float g = float(curand(&states[index])) / float(RAND_MAX);
+	float b = float(curand(&states[index])) / float(RAND_MAX);
+	attribMat[index].color = make_float4(r, g, b, 1.f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -543,7 +548,7 @@ void initMatrices() {
 	checkCudaErrors(cudaMalloc(&d_mat_pos, sizeof(float2) * NUMBER_OF_BOIDS));
 	checkCudaErrors(cudaMalloc(&d_mat_attribs, sizeof(boidAttrib) * NUMBER_OF_BOIDS));
 
-	scenarioDefault();
+	scenarioDefault(true);
 	//scenarioFaceToFace();
 	//scenarioCross();
 }
@@ -640,7 +645,6 @@ void update_configs(float *configs) {
 void launch_update_kernel() {
 	//update_kernel << <numBlocks, threadsPerBlock >> >(d_pos, d_velo, d_accel, d_rot, d_wanderAngle,
 		//d_wanderAngularVelo, d_states, d_configs);
-
 	simulation_pass << <grid, threadsPerBlock >> > (d_mat_pos, d_mat_attribs, d_states, d_configs);
 }
 
@@ -675,7 +679,7 @@ void cleanupKernel() {
 // SCENARIOS
 ////////////////////////////////////////////////////////////////////////////////
 
-void scenarioDefault() {
+void scenarioDefault(bool randomColor) {
 	// write host matrices
 	for (int i = 0; i < NUMBER_OF_BOIDS; ++i) {
 		h_mat_pos[i].x = (float)(rand() % WINDOW_WIDTH);
@@ -687,8 +691,13 @@ void scenarioDefault() {
 		h_mat_attribs[i].rot = (float)(rand() % 360);
 		h_mat_attribs[i].wanderAngle = (rand() % 100) / 100.f * 2.f * (float)M_PI;
 		h_mat_attribs[i].wanderAngularVelo = (float)(0.1f*(2.0f*double(rand() + i) / double(RAND_MAX) - 1.0f));
-		h_mat_attribs[i].color = make_float4(1.f, 0.f, 0.f, 1.f);
-		h_mat_attribs[i].useDefaultColor = true;
+		//h_mat_attribs[i].color = make_float4(1.f, 0.f, 0.f, 1.f);
+
+		float r = float(rand()) / float(RAND_MAX);
+		float g = float(rand()) / float(RAND_MAX);
+		float b = float(rand()) / float(RAND_MAX);
+		h_mat_attribs[i].color = make_float4(r, g, b, 1.f);
+		h_mat_attribs[i].useDefaultColor = !randomColor;
 		h_mat_attribs[i].useGoal = false;
 	}
 

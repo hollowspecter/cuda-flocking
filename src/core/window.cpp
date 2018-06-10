@@ -147,7 +147,7 @@ void Window::gui() {
 		pGui->gui_scenario_cross = false;
 	}
 	if (pGui->gui_scenario_default) {
-		scenarioDefault();
+		scenarioDefault(pGui->gui_random_color);
 		copy_host_to_device();
 		pGui->gui_scenario_default = false;
 	}

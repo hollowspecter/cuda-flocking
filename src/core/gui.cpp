@@ -37,16 +37,18 @@ void Gui::fillConfigs() {
 	}
 	configs[WEIGHT_ALIGNEMENT] = 0.7f;
 	configs[WEIGHT_COHESION] = 0.89f;
+	configs[WEIGHT_SEPERATION] = 2.0f;
 	configs[BOID_MAX_VELOCITY] = MAX_VELOCITY;
 	configs[BOID_MAX_ACCEL] = MAX_ACCELERATION;
-	configs[BOID_SIZE] = 2.f;
+	configs[BOID_SIZE] = 4.f;
 	configs[DISTANCE_ALIGNEMENT] = 100.f;
 	configs[DISTANCE_COHESION] = 100.f;
-	configs[DISTANCE_SEPERATION] = 50.f;
-	configs[DISTANCE_AVOIDANCE] = 50.f;
+	configs[DISTANCE_SEPERATION] = 15.f;
+	configs[DISTANCE_AVOIDANCE] = 15.f;
 	configs[GOAL_1_x] = 300.f;
 	configs[GOAL_1_y] = 300.f;
-	configs[NEIGHBORHOOD_RADIUS] = 2.0f;
+	configs[NEIGHBORHOOD_RADIUS] = 3.0f;
+	configs[WEIGHT_AVOIDANCE] = 0.f;
 
 	// init colors
 	color_bg[0] = 24.f / 255.f;
@@ -98,6 +100,7 @@ void Gui::renderImgui()
 	if (ImGui::CollapsingHeader("Boid Attributes"))
 	{
 		ImGui::SliderFloat("size", &configs[BOID_SIZE], 1.0f, 50.f);
+		ImGui::Checkbox("Random Color", &gui_random_color);
 		ImGui::ColorEdit3("background boid", color_boid);
 		configs[DEFAULT_COLOR_R] = color_boid[0];
 		configs[DEFAULT_COLOR_G] = color_boid[1];

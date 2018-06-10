@@ -45,7 +45,7 @@ void update_configs(float *configs);
 void initMatrices();
 void launch_sorting_kernel();
 void sortHostPosMatrix();
-void scenarioDefault();
+void scenarioDefault(bool randomColor);
 void scenarioFaceToFace();
 void scenarioCross();
 

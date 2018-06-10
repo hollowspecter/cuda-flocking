@@ -8,8 +8,10 @@
 #define MAX_VELOCITY 100.0
 #define MAX_ACCELERATION 50.0
 
+// 512 für 262k
 // 256 für 65k
 // 128 für 16k
+// k6 für 4k
 #define MAT_SIZE 128
 #define NUMBER_OF_BOIDS (MAT_SIZE * MAT_SIZE) //16384
 
