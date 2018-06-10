@@ -21,12 +21,14 @@ const dim3 grid = dim3(4,4,1);
 
 __global__ void init_states_kernel(unsigned int seed, curandState_t *states) {
 
+	int index = getGlobalIdx_3D_1D();
+
 	/* we have to initialize the state */
 	curand_init(seed, /* the seed can be the same for each core, here we pass the time in from the CPU */
-		threadIdx.x, /* the sequence number should be different for each core (unless you want all
+		index, /* the sequence number should be different for each core (unless you want all
 					 cores to get the same sequence of numbers for some reason - use thread id! */
 		0, /* the offset is how much extra we advance in the sequence for each call, can be 0 */
-		&states[threadIdx.x]);
+		&states[index]);
 }
 __global__ void vbo_pass(float2 *pos, float4 *col, float2 *posMat, boidAttrib *attribMat, float *configs) {
 	//unsigned int boidIndex = threadIdx.x;
@@ -386,19 +388,17 @@ __device__ void wanderBehavior(unsigned int index, float2 *posMat, boidAttrib *a
 	attribMat[index].resultWander.x = (circleCenter.x + displacement.x);
 	attribMat[index].resultWander.y = (circleCenter.y + displacement.y);
 
-	//attribMat[index].accel.x = (circleCenter.x + displacement.x) * configs[WEIGHT_WANDER];
-	//attribMat[index].accel.y = (circleCenter.y + displacement.y) * configs[WEIGHT_WANDER];
-
 	// move the circle point randomly on the circular path by changing the wanderAngle
 	float wanderAngularAccel = (0.2*double(curand(&states[index])) / double(RAND_MAX) - 0.1);
 	attribMat[index].wanderAngularVelo += 0.5f * wanderAngularAccel;
 	CLAMP(-MAX_WANDER_VELO, attribMat[index].wanderAngularVelo, MAX_WANDER_VELO);
 	attribMat[index].wanderAngle += 0.5f * attribMat[index].wanderAngularVelo;
 
-	float r = float(curand(&states[index])) / float(RAND_MAX);
-	float g = float(curand(&states[index])) / float(RAND_MAX);
-	float b = float(curand(&states[index])) / float(RAND_MAX);
-	attribMat[index].color = make_float4(r, g, b, 1.f);
+	// testing for curand, seems to not work
+	//float r = float(curand(&states[index])) / float(RAND_MAX);
+	//float g = float(curand(&states[index])) / float(RAND_MAX);
+	//float b = float(curand(&states[index])) / float(RAND_MAX);
+	//attribMat[index].color = make_float4(r, g, b, 1.f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
