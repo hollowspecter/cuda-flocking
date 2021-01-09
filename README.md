@@ -63,3 +63,7 @@ Here, the following steps are calculated for each boid:
 Shoot me an email: [baguiov[at]posteo.net](mailto:baguiov@posteo.net)
 
 # Screenshots
+![gif](https://raw.githubusercontent.com/hollowspecter/cuda-flocking/master/img/simple.gif)
+![screenshot 1](https://raw.githubusercontent.com/hollowspecter/cuda-flocking/master/img/screenshot.png)
+![screenshot 2](https://raw.githubusercontent.com/hollowspecter/cuda-flocking/master/img/lotsaboids.png)
+![screenshot 3](https://raw.githubusercontent.com/hollowspecter/cuda-flocking/master/img/Imgui.jpg)
