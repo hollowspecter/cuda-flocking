@@ -61,3 +61,5 @@ Here, the following steps are calculated for each boid:
 
 # Questions?
 Shoot me an email: [baguiov[at]posteo.net](mailto:baguiov@posteo.net)
+
+# Screenshots
